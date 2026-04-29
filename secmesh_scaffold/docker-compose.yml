@@ -1,0 +1,33 @@
+services:
+  ingestion:
+    build: ./services/ingestion
+    env_file: .env
+    ports: ["8001:8000"]
+    volumes:
+      - ./rules:/rules:ro
+      - ./examples:/examples:ro
+  normalizer:
+    build: ./services/normalizer
+    env_file: .env
+    ports: ["8002:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  mapping:
+    build: ./services/mapping
+    env_file: .env
+    ports: ["8003:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  scoring:
+    build: ./services/scoring
+    env_file: .env
+    ports: ["8004:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  reporting:
+    build: ./services/reporting
+    env_file: .env
+    ports: ["8005:8000"]
+    volumes:
+      - ./rules:/rules:ro
+      - ./schemas:/schemas:ro
