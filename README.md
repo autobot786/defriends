@@ -78,13 +78,28 @@ Click the preview below to open the live, interactive demo:
 
 [![defriends animated demo preview](demo-preview.gif)](https://autobot786.github.io/defriends/demo.html)
 
-> If the image doesn’t render yet, add `demo-preview.gif` (or `demo-preview.mp4` as a GIF alternative) to the repository root.
-
 ---
 
 ## Interactive Demo
 
 A **live, interactive demo** is included so users can understand basic usage without installing anything.
+
+### Interactive workflow (colourful)
+
+Click to explore the full interactive workflow:
+
+[![Interactive workflow preview](workflow-preview.png)](https://autobot786.github.io/defriends/demo.html)
+
+**Quick links — jump straight to a section:**
+
+| Section | Link |
+|:--------|:-----|
+| 🔄 Pipeline | [demo.html#pipeline](https://autobot786.github.io/defriends/demo.html#pipeline) |
+| 🔐 Consent Wizard | [demo.html#consent](https://autobot786.github.io/defriends/demo.html#consent) |
+| 📊 Risk Scorer | [demo.html#scoring](https://autobot786.github.io/defriends/demo.html#scoring) |
+| 🗺️ MITRE ATT&CK Map | [demo.html#mitre](https://autobot786.github.io/defriends/demo.html#mitre) |
+| 🛠️ Remediation | [demo.html#remediation](https://autobot786.github.io/defriends/demo.html#remediation) |
+| 📡 Live Feed | [demo.html#feed](https://autobot786.github.io/defriends/demo.html#feed) |
 
 ### Option A (recommended): Hosted demo (GitHub Pages)
 
