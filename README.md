@@ -16,207 +16,105 @@
 
 ---
 
-## Automated demo (copy/paste)
+## Interactive demo (README)
 
-Below is a **fully automated, end-to-end demo script** you can run locally. It starts the server, runs an agent scan (consent-gated), and prints a few useful endpoints to open in the browser.
+This README includes a **guided, click-to-expand demo** you can walk through in under 2 minutes — **no scripts** and no terminal pastewalls.
 
-### Demo script (macOS/Linux)
+> Want the full experience? Jump to **[Interactive Demo](#interactive-demo)**.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+### Demo “wizard” (click to expand)
 
-# defriends automated demo runner
-# - Starts the unified server
-# - Runs a consent-gated agent scan against it
-# - Prints helpful URLs
+<details>
+<summary><strong>Step 1 — What are we simulating?</strong></summary>
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$ROOT_DIR"
+You’ll simulate a defensive pipeline:
 
-# You can override these when running the script:
-: "${PORT:=8080}"
-: "${SERVER:=http://127.0.0.1:${PORT}}"
-: "${ORG:=demo-org}"
-: "${ASSET:=demo-laptop}"
-: "${ENVIRONMENT:=demo}"
+**Consent-gated collection → normalize evidence → map to MITRE ATT&CK → score risk → report + dry-run remediation**
 
-VENV_DIR="${VENV_DIR:-.venv}"
+Nothing here is offensive. No exploit code, no payloads, no unauthorized scanning.
 
-echo "[demo] Using server: ${SERVER}"
+</details>
 
-echo "[demo] Creating venv at ${VENV_DIR} (if missing)"
-python -m venv "$VENV_DIR"
-# shellcheck disable=SC1091
-source "$VENV_DIR/bin/activate"
+<details>
+<summary><strong>Step 2 — Consent receipt (example)</strong></summary>
 
-python -m pip install -U pip >/dev/null
+**What you approve (scopes):**
+- `system_logs`
+- `auth_logs`
+- `process_metadata`
+- `network_metadata`
 
-# NOTE:
-# README quickstart points to secmesh_scaffold; this repo may be a web/demo shell.
-# This script tries the in-repo install first, and falls back to the quickstart scaffold if needed.
+**Default retention:** 7 days  
+**Revocation:** wipes cached client data and invalidates in-flight collection on next heartbeat.
 
-start_server() {
-  echo "[demo] Starting server..."
-  # Try common entrypoints used in this project family
-  if python -c "import secmesh_scaffold" >/dev/null 2>&1; then
-    python -m secmesh_scaffold --port "$PORT" &
-  elif [[ -f "app_unified.py" ]]; then
-    python app_unified.py --port "$PORT" &
-  else
-    echo "[demo] Could not find an in-repo server entrypoint." >&2
-    return 1
-  fi
+Example receipt ID format:
+- `crcpt-2026-04-29-demo-org-demo-laptop`
 
-  SERVER_PID=$!
-  echo "[demo] Server PID: ${SERVER_PID}"
+</details>
 
-  # Wait for health
-  echo "[demo] Waiting for health endpoint..."
-  for _ in {1..60}; do
-    if curl -fsS "${SERVER}/health" >/dev/null 2>&1; then
-      echo "[demo] Server is healthy."
-      return 0
-    fi
-    sleep 1
-  done
+<details>
+<summary><strong>Step 3 — Evidence event (example)</strong></summary>
 
-  echo "[demo] Server did not become healthy in time." >&2
-  return 1
-}
+A single “evidence event” is normalized into a consistent schema, then checked for:
 
-cleanup() {
-  if [[ -n "${SERVER_PID:-}" ]]; then
-    echo "[demo] Stopping server PID ${SERVER_PID}";
-    kill "${SERVER_PID}" >/dev/null 2>&1 || true
-  fi
-}
-trap cleanup EXIT
+- valid `consent_receipt_id`
+- tamper-proof HMAC signature
+- redacted secrets / PII-safe snippets
+- retention window compliance
 
-# Install deps if a requirements file exists
-if [[ -f "requirements.txt" ]]; then
-  echo "[demo] Installing requirements.txt"
-  pip install -r requirements.txt >/dev/null
-fi
+Result: **accepted** → enters mapping & scoring.
 
-# Start server
-SERVER_PID=""
-start_server
+</details>
 
-# Run agent (if present)
-if [[ -f "agents/dirtybots_agent.py" ]]; then
-  echo "[demo] Running consent-gated agent scan"
-  python agents/dirtybots_agent.py \
-    --server "${SERVER}" \
-    --org "${ORG}" \
-    --asset "${ASSET}" \
-    --env "${ENVIRONMENT}" || true
-else
-  echo "[demo] agents/dirtybots_agent.py not found in this repo; skipping agent run."
-fi
+<details>
+<summary><strong>Step 4 — MITRE ATT&CK mapping (what you’d see)</strong></summary>
 
-echo
-echo "[demo] Open these in your browser:" 
-echo "  Dashboard : ${SERVER}/dashboard" 
-echo "  API Docs  : ${SERVER}/docs" 
-echo "  Health    : ${SERVER}/health" 
-echo
+A finding is mapped via rule pack logic (CWE/CVE context → technique):
 
-echo "[demo] Done. Press Ctrl+C to stop." 
-wait
-```
+- **Input:** CWE + context fields  
+- **Output:** MITRE technique + tactic column placement
 
-### Demo script (Windows PowerShell)
+This is how defriends turns raw security evidence into “what technique is happening?”
 
-```powershell
-# defriends automated demo runner (PowerShell)
-# - Starts the unified server
-# - Runs a consent-gated agent scan (if present)
+</details>
 
-$ErrorActionPreference = "Stop"
+<details>
+<summary><strong>Step 5 — Risk scoring (toy example)</strong></summary>
 
-$PORT = $env:PORT; if (-not $PORT) { $PORT = "8080" }
-$SERVER = $env:SERVER; if (-not $SERVER) { $SERVER = "http://127.0.0.1:$PORT" }
-$ORG = $env:ORG; if (-not $ORG) { $ORG = "demo-org" }
-$ASSET = $env:ASSET; if (-not $ASSET) { $ASSET = "demo-laptop" }
-$ENVIRONMENT = $env:ENVIRONMENT; if (-not $ENVIRONMENT) { $ENVIRONMENT = "demo" }
+Scoring model:
 
-Write-Host "[demo] Using server: $SERVER"
+`score = (cvss/10 × 55) + (epss × 25) + (kev × 10) + (reachable × 7) + (internet × 3)`
 
-if (-not (Test-Path .venv)) {
-  Write-Host "[demo] Creating venv"
-  python -m venv .venv
-}
+Example inputs:
+- CVSS: 8.2
+- EPSS: 0.42
+- KEV: yes
+- Reachable: yes
+- Internet: no
 
-. .\.venv\Scripts\Activate.ps1
-python -m pip install -U pip | Out-Null
+**Output:** a priority bucket **P0–P3** with a plain-language reason.
 
-if (Test-Path requirements.txt) {
-  Write-Host "[demo] Installing requirements.txt"
-  pip install -r requirements.txt | Out-Null
-}
+</details>
 
-Write-Host "[demo] Starting server..."
-$serverProcess = $null
+<details>
+<summary><strong>Step 6 — Remediation (dry-run first)</strong></summary>
 
-try {
-  # Try common entrypoints
-  python -c "import secmesh_scaffold" 2>$null
-  if ($LASTEXITCODE -eq 0) {
-    $serverProcess = Start-Process -PassThru python -ArgumentList "-m secmesh_scaffold --port $PORT"
-  } elseif (Test-Path app_unified.py) {
-    $serverProcess = Start-Process -PassThru python -ArgumentList "app_unified.py --port $PORT"
-  } else {
-    throw "Could not find an in-repo server entrypoint."
-  }
+Every remediation path is:
+- OS-aware
+- copy/paste friendly
+- **dry-run by default**
+- includes verify + rollback steps
+- gated behind consent for “apply” actions
 
-  Write-Host "[demo] Server PID: $($serverProcess.Id)"
+Output: a step-by-step playbook you can follow without jargon.
 
-  Write-Host "[demo] Waiting for health endpoint..."
-  $healthy = $false
-  for ($i=0; $i -lt 60; $i++) {
-    try {
-      Invoke-WebRequest "$SERVER/health" -UseBasicParsing | Out-Null
-      $healthy = $true
-      break
-    } catch {
-      Start-Sleep -Seconds 1
-    }
-  }
+</details>
 
-  if (-not $healthy) { throw "Server did not become healthy in time." }
-  Write-Host "[demo] Server is healthy."
+### What to click next
 
-  if (Test-Path agents\dirtybots_agent.py) {
-    Write-Host "[demo] Running consent-gated agent scan"
-    python agents\dirtybots_agent.py --server $SERVER --org $ORG --asset $ASSET --env $ENVIRONMENT
-  } else {
-    Write-Host "[demo] agents\dirtybots_agent.py not found in this repo; skipping agent run."
-  }
-
-  Write-Host ""
-  Write-Host "[demo] Open these in your browser:"
-  Write-Host "  Dashboard : $SERVER/dashboard"
-  Write-Host "  API Docs  : $SERVER/docs"
-  Write-Host "  Health    : $SERVER/health"
-  Write-Host ""
-  Write-Host "[demo] Done. Close this window to stop."
-
-  Wait-Process -Id $serverProcess.Id
-}
-finally {
-  if ($serverProcess -and -not $serverProcess.HasExited) {
-    Write-Host "[demo] Stopping server PID $($serverProcess.Id)"
-    Stop-Process -Id $serverProcess.Id -Force
-  }
-}
-```
-
-### What this demo shows
-
-- **Server boot + health check** (`/health`)
-- **Consent-gated agent run** (if `agents/dirtybots_agent.py` exists)
-- **Where to look next** (`/dashboard`, `/docs`)
+- Want the “real” interactive experience? → **[Open the live demo](#interactive-demo)**
+- Want to install & run? → **[Quickstart](#quickstart)**
+- Want to validate privacy/retention? → **[Privacy, consent & data handling](#privacy-consent--data-handling)**
 
 ---
 
@@ -306,15 +204,8 @@ Once enabled, you’ll have a public URL like:
 
 `demo.html` is a self-contained, zero-dependency browser demo. Open it with any modern browser — no build step.
 
-```bash
-# Clone the repo and open the demo directly
-git clone https://github.com/autobot786/defriends.git
-cd defriends
-
-open demo.html          # macOS
-xdg-open demo.html      # Linux
-start demo.html         # Windows
-```
+- Clone the repo
+- Open `demo.html` in your browser
 
 | Section | What you can do |
 |:--------|:----------------|
@@ -359,7 +250,7 @@ defriends is built around ISO/IEC 29184 consent-receipt semantics, mapped to eac
 
 | Framework | Rights honored | API |
 |:---|:---|:---|
-| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|..[...] |
+| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|..[...]` |
 | **CCPA / CPRA (CA)** | Right to know, delete, correct, opt-out of sale/share. Opt-out of sale is honored by default. | `POST /v1/consent/dsr` with `request_type=opt_out_sale|...` |
 | **HIPAA (US healthcare)** | PHI-adjacent scope is off by default; requires separate authorization (45 CFR § 164.508). | `POST /v1/consent/...` |
 | **SOC 2 / ISO 27001** | Every consent action is appended to a hash-chained audit log. | `GET /v1/consent/audit` |
