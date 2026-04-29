@@ -1,12 +1,25 @@
 # defriends
 
-defriends is an authorized device security assessment workspace. It helps a user collect assessment records, understand risk in plain language, map findings to control domains, verify result legitimacy, and produce a simple report that a non-technical device owner can read.
+defriends is an authorized device security assessment workspace. It helps a user collect assessment records, understand risk in plain language, map findings to control domains, verify result legitimacy, generate a layman-friendly report, and guide remediation.
 
 The public surface is intentionally small. The dashboard, API docs, user portal, and capability manifest require login so the product idea and assessment workflow are not exposed to casual visitors.
 
+## Table of Contents
+
+- [Interactive Demo](#interactive-demo)
+- [API Quick Checks](#api-quick-checks)
+- [Control Domains Included](#control-domains-included)
+- [Running Tests](#running-tests)
+- [Service Layout](#service-layout)
+- [Key Files](#key-files)
+- [Environment Variables](#environment-variables)
+- [Privacy And Safety Notes](#privacy-and-safety-notes)
+- [Development Notes](#development-notes)
+
 ## Interactive Demo
 
-### 1. Start The App
+<details open>
+<summary><strong>1. Start The App</strong></summary>
 
 ```bash
 python -m secmesh_scaffold
@@ -34,7 +47,10 @@ Open:
 http://127.0.0.1:8080/login
 ```
 
-### 2. Create A Local Demo User
+</details>
+
+<details>
+<summary><strong>2. Create A Local Demo User</strong></summary>
 
 Use a local-only account for the demo:
 
@@ -46,7 +62,10 @@ curl -X POST http://127.0.0.1:8080/v1/auth/register \
 
 Then sign in from `/login`. After login, the app redirects to `/ui`.
 
-### 3. Walk Through The Demo
+</details>
+
+<details>
+<summary><strong>3. Walk Through The Demo</strong></summary>
 
 Use the dashboard cards in this order:
 
@@ -61,7 +80,10 @@ Use the dashboard cards in this order:
 | 7 | Legitimacy | Run legitimacy verification | The app checks whether totals, risk, evidence, controls, and recommendations agree |
 | 8 | AI Assistant | Ask "What should I do next?" | The assistant explains the next action and offers safe action buttons |
 
-### 4. What The Demo Proves
+</details>
+
+<details>
+<summary><strong>4. What The Demo Proves</strong></summary>
 
 The demo verifies that defriends can:
 
@@ -76,7 +98,10 @@ The demo verifies that defriends can:
 - generate a plain-language PDF report for non-technical readers;
 - guide a stuck user with an assistant that can suggest safe next actions.
 
-### 5. Expected Demo Output
+</details>
+
+<details>
+<summary><strong>5. Expected Demo Output</strong></summary>
 
 A completed demo should produce:
 
@@ -86,7 +111,10 @@ A completed demo should produce:
 - a legitimacy verdict with confidence;
 - a PDF report with simple sections such as "Bottom Line", "What To Do First", "Risks Found", and "Why The Results Are Legit".
 
-### 6. Public Exposure Check
+</details>
+
+<details>
+<summary><strong>6. Public Exposure Check</strong></summary>
 
 These routes are intentionally protected:
 
@@ -100,15 +128,21 @@ These routes are intentionally protected:
 
 `/health` remains public so deployments can check whether the app is running.
 
+</details>
+
 ## API Quick Checks
 
-Health:
+<details open>
+<summary><strong>Health</strong></summary>
 
 ```bash
 curl http://127.0.0.1:8080/health
 ```
 
-Public API index:
+</details>
+
+<details>
+<summary><strong>Public API index</strong></summary>
 
 ```bash
 curl http://127.0.0.1:8080/api
@@ -126,7 +160,12 @@ Expected unauthenticated shape:
 }
 ```
 
+</details>
+
 ## Control Domains Included
+
+<details open>
+<summary><strong>NIST SP 800-53 + ISO/IEC 27001:2022 enrichment</strong></summary>
 
 The reporting layer enriches assessments with the requested NIST SP 800-53 and ISO/IEC 27001:2022 domains, including:
 
@@ -148,6 +187,8 @@ The reporting layer enriches assessments with the requested NIST SP 800-53 and I
 - secure development life cycle.
 
 Failed and partial domains are not left as labels only. They are converted into clear recommended actions and included in the final report.
+
+</details>
 
 ## Running Tests
 
