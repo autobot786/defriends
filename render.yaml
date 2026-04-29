@@ -1,0 +1,16 @@
+﻿services:
+  - type: web
+    name: dirtybots
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    customDomains:
+      - wwwdirtybots.com
+    envVars:
+      - key: DIRTYBOT_ORG_ID
+        value: demo-org
+      - key: DIRTYBOT_MAPPING_PACK
+        value: /app/rules/mapping/mitre_cwe_context.v1.yaml
+      - key: DIRTYBOT_REPORT_SCHEMA
+        value: /app/schemas/report.schema.json

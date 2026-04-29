@@ -1,0 +1,49 @@
+services:
+  ingestion:
+    build: ./services/ingestion
+    env_file: .env
+    ports: ["8001:8000"]
+    volumes:
+      - ./rules:/rules:ro
+      - ./examples:/examples:ro
+  normalizer:
+    build: ./services/normalizer
+    env_file: .env
+    ports: ["8002:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  mapping:
+    build: ./services/mapping
+    env_file: .env
+    ports: ["8003:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  scoring:
+    build: ./services/scoring
+    env_file: .env
+    ports: ["8004:8000"]
+    volumes:
+      - ./rules:/rules:ro
+  reporting:
+    build: ./services/reporting
+    env_file: .env
+    ports: ["8005:8000"]
+    volumes:
+      - ./rules:/rules:ro
+      - ./schemas:/schemas:ro
+  gateway:
+    build: ./services/gateway
+    env_file: .env
+    ports: ["8080:8000"]
+    environment:
+      DIRTYBOT_INGESTION_URL: http://ingestion:8000
+      DIRTYBOT_NORMALIZER_URL: http://normalizer:8000
+      DIRTYBOT_MAPPING_URL: http://mapping:8000
+      DIRTYBOT_SCORING_URL: http://scoring:8000
+      DIRTYBOT_REPORTING_URL: http://reporting:8000
+    depends_on:
+      - ingestion
+      - normalizer
+      - mapping
+      - scoring
+      - reporting
