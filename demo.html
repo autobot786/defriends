@@ -1188,9 +1188,13 @@ function toggleJuri(el, name) {
 }
 
 function buildReceipt() {
-  const id = 'crcpt-' + Math.random().toString(36).slice(2,18);
+  // Use Web Crypto API for cryptographically secure random receipt IDs and hashes (demo — no backend)
+  const randBytes = crypto.getRandomValues(new Uint8Array(24));
+  const id = 'crcpt-' + Array.from(randBytes, b => b.toString(36).padStart(2,'0')).join('').slice(0,18);
   const ts = new Date().toISOString();
-  const hash = 'sha256:' + Array.from({length:16},()=>Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join('');
+  const hashBytes = crypto.getRandomValues(new Uint8Array(16));
+  const hash = 'sha256:' + Array.from(hashBytes, b => b.toString(16).padStart(2,'0')).join('') +
+    ' /* simulated — production uses real SHA-256 over the receipt payload */';
   const enabledScopes = Object.entries(state.wizard.scopes).filter(([,v])=>v).map(([k])=>k);
   state.wizard.receiptId = id;
   return `<span class="receipt-key">consent_receipt_id: </span><span class="receipt-val">${id}</span>
@@ -1680,7 +1684,7 @@ const ASSETS = ['payments-api','auth-service','db-primary','api-gateway','worker
 function weightedRandom(items) {
   const totalWeight = items.reduce((s, i) => s + i.weight, 0);
   let r = Math.random() * totalWeight;
-  for (const item of items) { r -= item.weight; if (r <= 0) return item; }
+  for (const item of items) { r -= item.weight; if (r < 0) return item; }
   return items[items.length - 1];
 }
 
