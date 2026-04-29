@@ -1090,7 +1090,7 @@ async function runPipeline() {
   document.getElementById('pipelineSummary').classList.remove('show');
   document.getElementById('pipelineLog').innerHTML = '';
 
-  const timeNow = () => new Date().toISOString().substr(11,12);
+  const timeNow = () => new Date().toISOString().slice(11,23);
   const logEl = document.getElementById('pipelineLog');
 
   function addLog(cls, text) {
@@ -1188,7 +1188,7 @@ function toggleJuri(el, name) {
 }
 
 function buildReceipt() {
-  const id = 'crcpt-' + Math.random().toString(36).substr(2,16);
+  const id = 'crcpt-' + Math.random().toString(36).slice(2,18);
   const ts = new Date().toISOString();
   const hash = 'sha256:' + Array.from({length:16},()=>Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join('');
   const enabledScopes = Object.entries(state.wizard.scopes).filter(([,v])=>v).map(([k])=>k);
@@ -1694,7 +1694,7 @@ function makeFeedEntry() {
                 severity === 'medium'   ? Math.floor(Math.random()*25+30) :
                                           Math.floor(Math.random()*30);
   const now = new Date();
-  const ts = now.toTimeString().substr(0,8);
+  const ts = now.toTimeString().slice(0,8);
   return { ts, type:et.type, icon:et.icons, tech:et.techs[techIdx], tname:et.tnames[techIdx], severity, asset, score };
 }
 
