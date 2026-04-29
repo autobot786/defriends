@@ -72,6 +72,16 @@ defriends processes security evidence through an 8-layer pipeline (plus a Securi
 
 ---
 
+## Animated Demo
+
+Click the preview below to open the live, interactive demo:
+
+[![defriends animated demo preview](demo-preview.gif)](https://autobot786.github.io/defriends/demo.html)
+
+> If the image doesn’t render yet, add `demo-preview.gif` (or `demo-preview.mp4` as a GIF alternative) to the repository root.
+
+---
+
 ## Interactive Demo
 
 A **live, interactive demo** is included so users can understand basic usage without installing anything.
