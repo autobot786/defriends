@@ -18,16 +18,13 @@
 
 ## What is defriends?
 
-defriends is a defensive security platform that runs on the machines you own, with your permission, and tells you — in plain language — what's wrong and exactly how to fix it.
+defriends is a defensive security platform that runs on the machines you own, with your permission, and tells you — in plain language — what's wrong and exactly how to fix it. It is designed around:
 
-### What it does (in one line)
-**Consent-gated collection → normalize evidence → map to MITRE ATT&CK → score risk → generate reports + dry-run remediation.**
+**Consent before collection.** No log, no scan, no behavior signal leaves the client until you have signed a consent receipt. Every receipt is granular (per data category, per retention window), hash-chained for auditability, and revocable.
 
-### Key principles
+**Short retention by default.** Seven days. Always. The only exception is a serious finding (CVSS ≥ 7 or on CISA's Known-Exploited list) — and even then, the client requires a fresh consent receipt.
 
-- **Consent before collection.** No log, scan, or behavior signal leaves the client until you have signed a consent receipt. Receipts are granular (per data category, per retention window).
-- **Short retention by default.** Seven days by default. Extensions require fresh consent and are only allowed for serious findings.
-- **Layman-friendly remediation.** Findings come with a plain-language explanation and dry-run-first commands you can copy/paste.
+**Layman-friendly remediation.** Every finding ships with a plain-language explanation ("your firewall is off, anyone on your network can reach you") plus an exact fix plan. Fixes are dry-run first and consent-gated.
 
 ---
 
@@ -47,29 +44,6 @@ defriends processes security evidence through an 8-layer pipeline (plus a Securi
 | 7 | **Scoring** | `services/scoring/` — `score = CVSS×55 + EPSS×25 + KEV×10 + Reachable×7 + Internet×3` → P0-P3. |
 | 8 | **Reporting + Remediation + AI** | `services/reporting/` + `services/remediation/` + `services/ai_assistant/` — PDF/JSON reports, dry-run playbooks, plain-language walkthroughs. |
 
-```
-┌────────── Client machine (with your consent) ──────────┐
-│  agent + log_collector.py (AES-GCM, 7-day purge)       │
-│       │                                                │
-│       │ (HMAC-signed EvidenceEvents, TLS 1.3)          │
-└───────┼────────────────────────────────────────────────┘
-        ▼
-  [0] security middleware ──► [1] consent gate ──► [4] ingestion
-                                                       │
-             [3] behavioral ────────────────────────► [5] normalizer
-                                                       │
-                         [6] mapping (MITRE ATT&CK) ◄──┘
-                                                       │
-                                                       ▼
-                                              [7] risk scoring
-                                                       │
-                                                       ▼
-                          [8] report + remediation + AI assistant
-                                                       │
-                                                       ▼
-                          PDF + JSON + dry-run fix scripts + chat
-```
-
 ---
 
 ## Animated Demo
@@ -84,7 +58,9 @@ Click the preview below to open the live, interactive demo:
 
 ## Interactive Demo
 
-A **live, interactive demo** is included so users can understand basic usage without installing anything.
+Open the **live, interactive demo** to see the end-to-end working process (consent → evidence → MITRE mapping → risk scoring → remediation):
+
+- **Demo file:** [`demo.html`](./demo.html)
 
 ### Option A (recommended): Hosted demo (GitHub Pages)
 
@@ -112,14 +88,22 @@ xdg-open demo.html      # Linux
 start demo.html         # Windows
 ```
 
+### What the demo shows
+
 | Section | What you can do |
 |:--------|:----------------|
-| 🔄 **Pipeline** | Click "Run Demo Pipeline" — watch a sample packet flow through all layers with a streaming log |
-| 🔐 **Consent Wizard** | Walk through a consent flow and generate a `crcpt-*` receipt |
+| 🔄 **Pipeline** | Click "Run Demo Pipeline" — watch an evidence packet flow through all 8 layers with a streaming log |
+| 🔐 **Consent Wizard** | Walk through the 4-step consent flow and generate a `crcpt-*` receipt |
 | 📊 **Risk Scorer** | Drag CVSS/EPSS sliders and toggle KEV/Reachable/Internet flags — the score gauge updates live |
 | 🗺️ **MITRE ATT&CK Map** | Explore tactic columns populated from sample findings; click any card for CVE/CWE details |
-| 🛠️ **Remediation** | Step through playbooks with an animated dry-run; "Apply" actions are consent-gated |
+| 🛠️ **Remediation** | Step through P0→P1→P2 playbooks with a dry-run; "Apply" is consent-gated |
 | 📡 **Live Feed** | Watch a simulated behavioral-event stream with MITRE mappings and anomaly scores |
+
+### Optional: API call examples (mirrors real endpoints)
+
+The demo is **fully static** (it runs without a backend), but it includes an **API Examples** panel with copy/paste `curl` requests that mirror the real endpoints described in this repo.
+
+> If you run the server locally (see Quickstart below), you can use those `curl` calls against `http://127.0.0.1:8080`.
 
 ---
 
@@ -147,6 +131,7 @@ curl http://127.0.0.1:8080/health
 
 First-time users get the onboarding wizard at `/v1/ai/app/onboarding/steps`; the assistant tailors a "what to do first" checklist based on role, jurisdiction, platform, and risk appetite.
 
+
 ---
 
 ## Privacy, consent & data handling
@@ -155,10 +140,10 @@ defriends is built around ISO/IEC 29184 consent-receipt semantics, mapped to eac
 
 | Framework | Rights honored | API |
 |:---|:---|:---|
-| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|...` |
-| **CCPA / CPRA (CA)** | Right to know, delete, correct, opt-out of sale/share. Opt-out of sale is honored by default. | `POST /v1/consent/dsr` with `request_type=opt_out_sale|...` |
-| **HIPAA (US healthcare)** | PHI-adjacent scope is off by default; requires separate authorization (45 CFR § 164.508). | `POST /v1/consent/...` |
-| **SOC 2 / ISO 27001** | Every consent action is appended to a hash-chained audit log. | `GET /v1/consent/audit` |
+| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|portability|restrict|object` |
+| **CCPA / CPRA (CA)** | Right to know, delete, correct, opt-out of sale/share. Opt-out of sale is honored by default for all users, account or not. | `POST /v1/consent/dsr` with `request_type=opt_out|know|delete|correct` |
+| **HIPAA (US healthcare)** | PHI-adjacent scope is off by default and requires a separately signed authorization (45 CFR § 164.508). Accounting-of-disclosures is available. | `POST /v1/consent/dsr` |
+| **SOC 2 CC6.1 / ISO 27001 A.5.34** | Every consent action is appended to a hash-chained audit log. Any tampering invalidates every subsequent link. | `GET /v1/consent/audit` |
 
 ### Retention
 
@@ -178,7 +163,7 @@ Raw logs never leave the client. Upstream receives only aggregated counters plus
 
 ## MITRE ATT&CK mapping
 
-Every finding is resolved to a MITRE technique. The rule pack at `rules/mapping/mitre_cwe_context.v1.yaml` covers techniques across multiple tactics.
+Every finding is resolved to a MITRE technique. The rule pack at `rules/mapping/mitre_cwe_context.v1.yaml` has rules covering techniques across multiple tactics.
 
 ---
 
@@ -195,11 +180,12 @@ score = (cvss/10 × 55) + (epss × 25) + (kev × 10) + (reachable × 7) + (inter
 | **P2 — Medium** | ≥ 50 | Fix this sprint |
 | **P3 — Low** | < 50 | Track and monitor |
 
+
 ---
 
 ## Remediation with auto-fix (dry-run first)
 
-Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — apply mode requires explicit consent + confirmation.
+Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — the apply mode requires a valid consent receipt.
 
 ---
 
@@ -235,7 +221,7 @@ Every finding maps to a `Playbook` with a plain-language explanation, OS-aware c
 
 ## Project structure
 
-```
+```text
 secmesh_scaffold/
 ├── app_unified.py
 ├── services/
@@ -273,6 +259,7 @@ secmesh_scaffold/
 | **Microservices** | `docker compose up --build` | Production, horizontal scale |
 
 ---
+
 
 ## Defensive-only notice
 
