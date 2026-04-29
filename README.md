@@ -16,6 +16,210 @@
 
 ---
 
+## Automated demo (copy/paste)
+
+Below is a **fully automated, end-to-end demo script** you can run locally. It starts the server, runs an agent scan (consent-gated), and prints a few useful endpoints to open in the browser.
+
+### Demo script (macOS/Linux)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# defriends automated demo runner
+# - Starts the unified server
+# - Runs a consent-gated agent scan against it
+# - Prints helpful URLs
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+# You can override these when running the script:
+: "${PORT:=8080}"
+: "${SERVER:=http://127.0.0.1:${PORT}}"
+: "${ORG:=demo-org}"
+: "${ASSET:=demo-laptop}"
+: "${ENVIRONMENT:=demo}"
+
+VENV_DIR="${VENV_DIR:-.venv}"
+
+echo "[demo] Using server: ${SERVER}"
+
+echo "[demo] Creating venv at ${VENV_DIR} (if missing)"
+python -m venv "$VENV_DIR"
+# shellcheck disable=SC1091
+source "$VENV_DIR/bin/activate"
+
+python -m pip install -U pip >/dev/null
+
+# NOTE:
+# README quickstart points to secmesh_scaffold; this repo may be a web/demo shell.
+# This script tries the in-repo install first, and falls back to the quickstart scaffold if needed.
+
+start_server() {
+  echo "[demo] Starting server..."
+  # Try common entrypoints used in this project family
+  if python -c "import secmesh_scaffold" >/dev/null 2>&1; then
+    python -m secmesh_scaffold --port "$PORT" &
+  elif [[ -f "app_unified.py" ]]; then
+    python app_unified.py --port "$PORT" &
+  else
+    echo "[demo] Could not find an in-repo server entrypoint." >&2
+    return 1
+  fi
+
+  SERVER_PID=$!
+  echo "[demo] Server PID: ${SERVER_PID}"
+
+  # Wait for health
+  echo "[demo] Waiting for health endpoint..."
+  for _ in {1..60}; do
+    if curl -fsS "${SERVER}/health" >/dev/null 2>&1; then
+      echo "[demo] Server is healthy."
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "[demo] Server did not become healthy in time." >&2
+  return 1
+}
+
+cleanup() {
+  if [[ -n "${SERVER_PID:-}" ]]; then
+    echo "[demo] Stopping server PID ${SERVER_PID}";
+    kill "${SERVER_PID}" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+# Install deps if a requirements file exists
+if [[ -f "requirements.txt" ]]; then
+  echo "[demo] Installing requirements.txt"
+  pip install -r requirements.txt >/dev/null
+fi
+
+# Start server
+SERVER_PID=""
+start_server
+
+# Run agent (if present)
+if [[ -f "agents/dirtybots_agent.py" ]]; then
+  echo "[demo] Running consent-gated agent scan"
+  python agents/dirtybots_agent.py \
+    --server "${SERVER}" \
+    --org "${ORG}" \
+    --asset "${ASSET}" \
+    --env "${ENVIRONMENT}" || true
+else
+  echo "[demo] agents/dirtybots_agent.py not found in this repo; skipping agent run."
+fi
+
+echo
+echo "[demo] Open these in your browser:" 
+echo "  Dashboard : ${SERVER}/dashboard" 
+echo "  API Docs  : ${SERVER}/docs" 
+echo "  Health    : ${SERVER}/health" 
+echo
+
+echo "[demo] Done. Press Ctrl+C to stop." 
+wait
+```
+
+### Demo script (Windows PowerShell)
+
+```powershell
+# defriends automated demo runner (PowerShell)
+# - Starts the unified server
+# - Runs a consent-gated agent scan (if present)
+
+$ErrorActionPreference = "Stop"
+
+$PORT = $env:PORT; if (-not $PORT) { $PORT = "8080" }
+$SERVER = $env:SERVER; if (-not $SERVER) { $SERVER = "http://127.0.0.1:$PORT" }
+$ORG = $env:ORG; if (-not $ORG) { $ORG = "demo-org" }
+$ASSET = $env:ASSET; if (-not $ASSET) { $ASSET = "demo-laptop" }
+$ENVIRONMENT = $env:ENVIRONMENT; if (-not $ENVIRONMENT) { $ENVIRONMENT = "demo" }
+
+Write-Host "[demo] Using server: $SERVER"
+
+if (-not (Test-Path .venv)) {
+  Write-Host "[demo] Creating venv"
+  python -m venv .venv
+}
+
+. .\.venv\Scripts\Activate.ps1
+python -m pip install -U pip | Out-Null
+
+if (Test-Path requirements.txt) {
+  Write-Host "[demo] Installing requirements.txt"
+  pip install -r requirements.txt | Out-Null
+}
+
+Write-Host "[demo] Starting server..."
+$serverProcess = $null
+
+try {
+  # Try common entrypoints
+  python -c "import secmesh_scaffold" 2>$null
+  if ($LASTEXITCODE -eq 0) {
+    $serverProcess = Start-Process -PassThru python -ArgumentList "-m secmesh_scaffold --port $PORT"
+  } elseif (Test-Path app_unified.py) {
+    $serverProcess = Start-Process -PassThru python -ArgumentList "app_unified.py --port $PORT"
+  } else {
+    throw "Could not find an in-repo server entrypoint."
+  }
+
+  Write-Host "[demo] Server PID: $($serverProcess.Id)"
+
+  Write-Host "[demo] Waiting for health endpoint..."
+  $healthy = $false
+  for ($i=0; $i -lt 60; $i++) {
+    try {
+      Invoke-WebRequest "$SERVER/health" -UseBasicParsing | Out-Null
+      $healthy = $true
+      break
+    } catch {
+      Start-Sleep -Seconds 1
+    }
+  }
+
+  if (-not $healthy) { throw "Server did not become healthy in time." }
+  Write-Host "[demo] Server is healthy."
+
+  if (Test-Path agents\dirtybots_agent.py) {
+    Write-Host "[demo] Running consent-gated agent scan"
+    python agents\dirtybots_agent.py --server $SERVER --org $ORG --asset $ASSET --env $ENVIRONMENT
+  } else {
+    Write-Host "[demo] agents\dirtybots_agent.py not found in this repo; skipping agent run."
+  }
+
+  Write-Host ""
+  Write-Host "[demo] Open these in your browser:"
+  Write-Host "  Dashboard : $SERVER/dashboard"
+  Write-Host "  API Docs  : $SERVER/docs"
+  Write-Host "  Health    : $SERVER/health"
+  Write-Host ""
+  Write-Host "[demo] Done. Close this window to stop."
+
+  Wait-Process -Id $serverProcess.Id
+}
+finally {
+  if ($serverProcess -and -not $serverProcess.HasExited) {
+    Write-Host "[demo] Stopping server PID $($serverProcess.Id)"
+    Stop-Process -Id $serverProcess.Id -Force
+  }
+}
+```
+
+### What this demo shows
+
+- **Server boot + health check** (`/health`)
+- **Consent-gated agent run** (if `agents/dirtybots_agent.py` exists)
+- **Where to look next** (`/dashboard`, `/docs`)
+
+---
+
 ## What is defriends?
 
 defriends is a defensive security platform that runs on the machines you own, with your permission, and tells you — in plain language — what's wrong and exactly how to fix it.
@@ -155,7 +359,7 @@ defriends is built around ISO/IEC 29184 consent-receipt semantics, mapped to eac
 
 | Framework | Rights honored | API |
 |:---|:---|:---|
-| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|...` |
+| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|..[...] |
 | **CCPA / CPRA (CA)** | Right to know, delete, correct, opt-out of sale/share. Opt-out of sale is honored by default. | `POST /v1/consent/dsr` with `request_type=opt_out_sale|...` |
 | **HIPAA (US healthcare)** | PHI-adjacent scope is off by default; requires separate authorization (45 CFR § 164.508). | `POST /v1/consent/...` |
 | **SOC 2 / ISO 27001** | Every consent action is appended to a hash-chained audit log. | `GET /v1/consent/audit` |
@@ -199,7 +403,7 @@ score = (cvss/10 × 55) + (epss × 25) + (kev × 10) + (reachable × 7) + (inter
 
 ## Remediation with auto-fix (dry-run first)
 
-Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — apply mode requires explicit consent + confirmation.
+Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — apply mode requires ex[...]
 
 ---
 
