@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>defriends — Authorized Device Security Assessment</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050c1a;--bg2:#0a1628;--bg3:#0f1e38;
+  --cyan:#06b6d4;--green:#22c997;--purple:#a855f7;--orange:#f97316;--yellow:#f59e0b;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --border:#1e3254;
+}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-grid{
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(6,182,212,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(6,182,212,.05) 1px,transparent 1px);
+  background-size:48px 48px;
+  animation:gridShift 20s linear infinite;
+}
+@keyframes gridShift{from{background-position:0 0}to{background-position:48px 48px}}
+
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-glow::before{
+  content:'';position:absolute;top:-20%;left:-10%;
+  width:60%;height:60%;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(6,182,212,.12) 0%,transparent 70%);
+  animation:floatA 12s ease-in-out infinite alternate;
+}
+.bg-glow::after{
+  content:'';position:absolute;bottom:-20%;right:-10%;
+  width:60%;height:60%;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(168,85,247,.1) 0%,transparent 70%);
+  animation:floatB 15s ease-in-out infinite alternate;
+}
+@keyframes floatA{from{transform:translate(0,0)}to{transform:translate(40px,-30px)}}
+@keyframes floatB{from{transform:translate(0,0)}to{transform:translate(-40px,30px)}}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:60px;
+  background:rgba(5,12,26,.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{font-size:20px;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(135deg,var(--cyan),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-outline:hover{color:var(--cyan);border-color:var(--cyan)}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0891b2);color:#050c1a}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(6,182,212,.4)}
+.btn-lg{padding:14px 32px;font-size:15px;border-radius:10px}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;padding:80px 24px 60px;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border-radius:100px;
+  background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);
+  font-size:12px;font-weight:600;color:var(--cyan);
+  margin-bottom:28px;letter-spacing:.5px;text-transform:uppercase;
+  animation:fadeUp .6s ease .1s both;
+}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}50%{box-shadow:0 0 0 6px rgba(6,182,212,0)}}
+
+h1{
+  font-size:clamp(36px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2px;
+  margin-bottom:24px;animation:fadeUp .6s ease .2s both;
+}
+.h1-line1{
+  display:block;
+  background:linear-gradient(135deg,var(--text) 30%,var(--cyan) 70%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.h1-line2{
+  display:block;
+  background:linear-gradient(135deg,var(--green),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:18px;color:var(--text2);max-width:560px;line-height:1.7;
+  margin-bottom:40px;animation:fadeUp .6s ease .3s both;
+}
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp .6s ease .4s both}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  position:relative;z-index:1;
+  display:flex;justify-content:center;gap:0;flex-wrap:wrap;
+  padding:0 24px 80px;animation:fadeUp .6s ease .5s both;
+}
+.stat-item{
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 40px;border-top:1px solid var(--border);
+}
+.stat-item:not(:last-child){border-right:1px solid var(--border)}
+.stat-val{font-size:30px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:12px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── FEATURE CARDS ── */
+.section{position:relative;z-index:1;padding:80px 24px;max-width:1100px;margin:0 auto}
+.section-label{
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:12px;text-align:center;
+}
+.section-title{font-size:clamp(26px,4vw,42px);font-weight:800;text-align:center;
+  letter-spacing:-.5px;margin-bottom:12px;line-height:1.2}
+.section-sub{font-size:16px;color:var(--text2);text-align:center;margin-bottom:60px;max-width:580px;margin-left:auto;margin-right:auto}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feature-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:28px;position:relative;overflow:hidden;
+  transition:all .3s;cursor:default;
+}
+.feature-card::before{
+  content:'';position:absolute;inset:0;border-radius:16px;opacity:0;
+  background:linear-gradient(135deg,rgba(6,182,212,.06),rgba(34,201,151,.04));
+  transition:opacity .3s;
+}
+.feature-card:hover{transform:translateY(-4px);border-color:rgba(6,182,212,.35);box-shadow:0 8px 32px rgba(6,182,212,.1)}
+.feature-card:hover::before{opacity:1}
+.feature-icon{
+  width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:16px;
+}
+.feature-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.feature-desc{font-size:13px;color:var(--text2);line-height:1.65}
+
+/* ── WORKFLOW STEPS ── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.step-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:20px;display:flex;gap:14px;align-items:flex-start;
+  transition:border-color .2s;
+}
+.step-card:hover{border-color:var(--border);border-color:rgba(6,182,212,.3)}
+.step-num{
+  min-width:32px;height:32px;border-radius:8px;background:rgba(6,182,212,.1);
+  border:1px solid rgba(6,182,212,.3);color:var(--cyan);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+}
+.step-info .step-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.step-info .step-desc{font-size:12px;color:var(--text2)}
+
+/* ── SECURITY NOTICE ── */
+.security-notice{
+  position:relative;z-index:1;margin:0 auto 80px;max-width:900px;padding:0 24px;
+}
+.notice-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:32px;display:flex;gap:20px;align-items:flex-start;
+}
+.notice-icon{font-size:28px;flex-shrink:0;margin-top:2px}
+.notice-content h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.notice-content p{font-size:14px;color:var(--text2);line-height:1.6}
+.notice-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tag{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  background:rgba(6,182,212,.1);color:var(--cyan);border:1px solid rgba(6,182,212,.25)}
+
+/* ── CTA SECTION ── */
+.cta-section{
+  position:relative;z-index:1;text-align:center;padding:80px 24px 100px;
+}
+.cta-box{
+  max-width:600px;margin:0 auto;
+  background:var(--bg2);border:1px solid var(--border);border-radius:24px;
+  padding:56px 40px;position:relative;overflow:hidden;
+}
+.cta-box::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(6,182,212,.07) 0%,transparent 60%);
+  pointer-events:none;
+}
+.cta-box h2{font-size:clamp(24px,4vw,36px);font-weight:800;letter-spacing:-.5px;margin-bottom:12px}
+.cta-box p{font-size:15px;color:var(--text2);margin-bottom:32px;line-height:1.6}
+
+/* ── FOOTER ── */
+footer{
+  position:relative;z-index:1;border-top:1px solid var(--border);
+  padding:24px;text-align:center;font-size:12px;color:var(--text3);
+}
+
+/* ── ANIMATED TERMINAL ── */
+.terminal{
+  background:#050c1a;border:1px solid var(--border);border-radius:12px;
+  padding:20px 24px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;
+  text-align:left;max-width:540px;margin:40px auto 0;
+  animation:fadeUp .6s ease .6s both;box-shadow:0 16px 48px rgba(0,0,0,.4);
+}
+.terminal-bar{display:flex;gap:6px;margin-bottom:16px}
+.t-dot{width:12px;height:12px;border-radius:50%}
+.t-red{background:#ef4444}.t-yellow{background:#f59e0b}.t-green{background:#22c55e}
+.t-line{margin:3px 0;color:var(--text2)}
+.t-prompt{color:var(--cyan)}
+.t-ok{color:var(--green)}
+.t-comment{color:var(--text3)}
+.cursor{display:inline-block;width:8px;height:14px;background:var(--cyan);margin-left:2px;animation:blink .8s step-end infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+  .stats-bar{flex-direction:column;align-items:center}
+  .stat-item:not(:last-child){border-right:none;border-bottom:1px solid var(--border)}
+  .nav-links .btn-outline{display:none}
+  .notice-box{flex-direction:column}
+  .cta-box{padding:36px 24px}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">defriends</span>
+  <div class="nav-links">
+    <a href="#features" class="btn btn-outline">Features</a>
+    <a href="#workflow" class="btn btn-outline">How It Works</a>
+    <a href="/login" class="btn btn-primary">Log In →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Authorized Security Assessment
+  </div>
+  <h1>
+    <span class="h1-line1">Assess. Understand.</span>
+    <span class="h1-line2">Remediate.</span>
+  </h1>
+  <p class="hero-sub">
+    A consent-first device security platform that turns raw findings into
+    prioritized reports, control-domain gaps, and plain-language guidance —
+    all behind a secure authenticated workspace.
+  </p>
+  <div class="hero-ctas">
+    <a href="/login" class="btn btn-primary btn-lg">Open Dashboard →</a>
+    <a href="#workflow" class="btn btn-outline btn-lg">See How It Works</a>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="t-dot t-red"></div>
+      <div class="t-dot t-yellow"></div>
+      <div class="t-dot t-green"></div>
+    </div>
+    <div class="t-line"><span class="t-prompt">$</span> curl http://localhost:8080/health</div>
+    <div class="t-line t-ok">{"status":"ok","service":"defriends"}</div>
+    <div class="t-line" style="margin-top:10px"><span class="t-prompt">$</span> open http://localhost:8080<span class="cursor"></span></div>
+    <div class="t-line t-comment"># → colorful dashboard awaits after login</div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar reveal">
+  <div class="stat-item">
+    <div class="stat-val">8</div>
+    <div class="stat-lbl">Pipeline Steps</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val">16+</div>
+    <div class="stat-lbl">Control Domains</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val">NIST</div>
+    <div class="stat-lbl">SP 800-53</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-val">ISO</div>
+    <div class="stat-lbl">27001 : 2022</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section reveal" id="features">
+  <div class="section-label">Capabilities</div>
+  <h2 class="section-title">Everything you need to assess risk</h2>
+  <p class="section-sub">From evidence ingestion to a layman-readable PDF report — one authenticated workspace.</p>
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(6,182,212,.15)">🛡️</div>
+      <div class="feature-title">Consent-First Design</div>
+      <div class="feature-desc">Every assessment requires explicit scope authorization. Consent receipts are hash-chained for provenance and auditability.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(168,85,247,.15)">🗺️</div>
+      <div class="feature-title">MITRE ATT&amp;CK Mapping</div>
+      <div class="feature-desc">Findings are automatically linked to CWE and MITRE ATT&amp;CK techniques via a configurable YAML rule engine.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(34,201,151,.15)">📊</div>
+      <div class="feature-title">Risk Scoring</div>
+      <div class="feature-desc">Priority-ranked P0–P3 scores using CVSS, EPSS, KEV signals and reachability context, with full explanations.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(245,158,11,.15)">📋</div>
+      <div class="feature-title">Control Domain Analysis</div>
+      <div class="feature-desc">16+ NIST SP 800-53 and ISO/IEC 27001:2022 domains enriched with actionable remediation steps for every failed control.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(249,115,22,.15)">✅</div>
+      <div class="feature-title">Legitimacy Verification</div>
+      <div class="feature-desc">Automated cross-checks that verify totals, risk scores, evidence counts, and recommendations are mutually consistent.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(6,182,212,.12)">🤖</div>
+      <div class="feature-title">AI Assistant</div>
+      <div class="feature-desc">Ask "What should I do next?" and receive plain-language guidance with safe, suggested next actions you can action immediately.</div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKFLOW -->
+<div class="section reveal" id="workflow">
+  <div class="section-label">Guided Tour</div>
+  <h2 class="section-title">8-step assessment pipeline</h2>
+  <p class="section-sub">Log in and click <strong>Start Tour</strong> on the dashboard — each step is animated and explained.</p>
+
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-info">
+        <div class="step-name">Ingestion</div>
+        <div class="step-desc">Load and submit the authorized assessment record</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-info">
+        <div class="step-name">Normalizer</div>
+        <div class="step-desc">Prepare the record consistently for analysis</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-info">
+        <div class="step-name">Mapping</div>
+        <div class="step-desc">Link findings to likely attack patterns</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-info">
+        <div class="step-name">Scoring</div>
+        <div class="step-desc">Compute risk priority and severity score</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-info">
+        <div class="step-name">Reporting</div>
+        <div class="step-desc">Generate a plain-language device risk report</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <div class="step-info">
+        <div class="step-name">Controls</div>
+        <div class="step-desc">Review failed and partial control domain gaps</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <div class="step-info">
+        <div class="step-name">Legitimacy</div>
+        <div class="step-desc">Verify report totals, evidence, and recommendations agree</div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">8</div>
+      <div class="step-info">
+        <div class="step-name">AI Assistant</div>
+        <div class="step-desc">Ask for guided next actions in plain language</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECURITY NOTICE -->
+<div class="security-notice reveal">
+  <div class="notice-box">
+    <div class="notice-icon">🔒</div>
+    <div class="notice-content">
+      <h3>Intentionally protected workspace</h3>
+      <p>The dashboard, API docs, user portal, and capability manifest all require authentication.
+         Only the landing page, login, and health endpoint are public — consistent with a minimal
+         attack surface for a sensitive security tool.</p>
+      <div class="notice-tags">
+        <span class="tag">Login required for /ui</span>
+        <span class="tag">Login required for /docs</span>
+        <span class="tag">/health is public</span>
+        <span class="tag">Cookie sessions</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section reveal">
+  <div class="cta-box">
+    <h2>Ready to get started?</h2>
+    <p>Create a local demo account and walk through the 8-step guided tour inside the authenticated dashboard.</p>
+    <a href="/login" class="btn btn-primary btn-lg">Open Dashboard →</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  defriends &mdash; Authorized device security assessment &nbsp;·&nbsp;
+  <a href="/login" style="color:var(--cyan);text-decoration:none">Log In</a> &nbsp;·&nbsp;
+  <a href="/health" style="color:var(--text3);text-decoration:none">/health</a>
+</footer>
+
+<script>
+/* Scroll-reveal */
+const ro = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+/* Smooth anchor scroll */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+</script>
+</body>
+</html>

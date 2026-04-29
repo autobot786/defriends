@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>defriends — Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050c1a;--bg2:#0a1628;--bg3:#0f1e38;--bg4:#141e35;
+  --cyan:#06b6d4;--green:#22c997;--yellow:#f59e0b;--orange:#f97316;
+  --red:#ef4444;--purple:#a855f7;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --border:#1e3254;
+  --radius:12px;--radius-sm:8px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;
+}
+
+/* ── NAV ── */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;height:56px;
+  background:rgba(5,12,26,.92);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:0;
+}
+.nav-logo{font-size:17px;font-weight:800;letter-spacing:-.3px;
+  background:linear-gradient(135deg,var(--cyan),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  flex-shrink:0;margin-right:20px}
+.nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
+.nav-tab{
+  padding:7px 14px;border:none;background:transparent;color:var(--text2);
+  font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;
+  transition:all .2s;white-space:nowrap;font-family:inherit;
+}
+.nav-tab:hover{background:var(--bg3);color:var(--text)}
+.nav-tab.active{background:rgba(6,182,212,.12);color:var(--cyan)}
+.nav-right{margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:10px}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:spulse 2s infinite}
+@keyframes spulse{0%,100%{box-shadow:0 0 0 0 rgba(34,201,151,.4)}50%{box-shadow:0 0 0 6px rgba(34,201,151,0)}}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:7px;
+  border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0891b2);color:#050c1a}
+.btn-primary:hover{box-shadow:0 0 16px rgba(6,182,212,.4)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--text3)}
+.btn-tour{
+  background:linear-gradient(135deg,var(--purple),#7c3aed);
+  color:#fff;padding:8px 18px;font-size:13px;
+  box-shadow:0 0 20px rgba(168,85,247,.3);
+  animation:tourGlow 2s ease-in-out infinite alternate;
+}
+@keyframes tourGlow{from{box-shadow:0 0 16px rgba(168,85,247,.3)}to{box-shadow:0 0 28px rgba(168,85,247,.6)}}
+.btn-tour:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(168,85,247,.5)}
+
+/* ── MAIN ── */
+#main{padding-top:56px}
+.pane{display:none;padding:28px 20px;max-width:1100px;margin:0 auto;animation:fadeIn .3s ease}
+.pane.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── OVERVIEW CARDS ── */
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.ov-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;transition:all .25s;cursor:default;
+}
+.ov-card:hover{border-color:rgba(6,182,212,.35);transform:translateY(-2px)}
+.ov-val{font-size:28px;font-weight:800;line-height:1}
+.ov-lbl{font-size:11px;color:var(--text2);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+.ov-icon{font-size:20px;margin-bottom:10px}
+
+/* ── PIPELINE STEPS ── */
+.pipeline-wrap{overflow-x:auto;padding-bottom:8px}
+.pipeline{display:flex;align-items:center;gap:0;min-width:700px}
+.pipe-node{
+  flex-shrink:0;width:90px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;transition:transform .2s;
+}
+.pipe-node:hover{transform:translateY(-3px)}
+.pipe-circle{
+  width:52px;height:52px;border-radius:50%;border:2px solid var(--border);
+  background:var(--bg2);display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:all .35s;position:relative;
+}
+.pipe-num{
+  position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;
+  background:var(--bg3);border:1px solid var(--border);
+  font-size:9px;font-weight:700;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+}
+.pipe-label{font-size:10px;font-weight:600;color:var(--text3);text-align:center;transition:color .3s}
+.pipe-node.active .pipe-circle{
+  border-color:var(--cyan);background:rgba(6,182,212,.1);
+  box-shadow:0 0 0 4px rgba(6,182,212,.12),0 0 20px rgba(6,182,212,.3);
+  animation:pnodeGlow 1.2s ease-in-out infinite;
+}
+@keyframes pnodeGlow{0%,100%{box-shadow:0 0 0 4px rgba(6,182,212,.12),0 0 16px rgba(6,182,212,.25)}50%{box-shadow:0 0 0 4px rgba(6,182,212,.2),0 0 28px rgba(6,182,212,.45)}}
+.pipe-node.active .pipe-label{color:var(--cyan)}
+.pipe-node.done .pipe-circle{border-color:var(--green);background:rgba(34,201,151,.08)}
+.pipe-node.done .pipe-label{color:var(--green)}
+.pipe-connector{
+  flex-shrink:0;height:2px;width:24px;background:var(--border);position:relative;overflow:hidden;
+}
+.pipe-connector .fill{
+  position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--green));transition:left .4s ease;
+}
+.pipe-connector.done .fill{left:0}
+
+/* ── STEP CARDS ── */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:28px}
+.step-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px;transition:all .25s;position:relative;overflow:hidden;
+}
+.step-card:hover{border-color:rgba(6,182,212,.3);transform:translateY(-2px)}
+.step-card.active-step{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(6,182,212,.3),0 8px 24px rgba(6,182,212,.12)}
+.step-card.done-step{border-color:rgba(34,201,151,.4)}
+.step-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.step-badge{
+  width:36px;height:36px;border-radius:9px;border:1px solid var(--border);
+  background:var(--bg3);display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.step-badge.active-b{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4)}
+.step-badge.done-b{background:rgba(34,201,151,.12);border-color:rgba(34,201,151,.4)}
+.step-info h3{font-size:14px;font-weight:700}
+.step-info span{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.step-body{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.step-result{
+  background:var(--bg3);border-radius:var(--radius-sm);padding:12px;
+  font-size:13px;display:none;animation:fadeIn .3s ease;
+}
+.step-result.show{display:block}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.result-row:not(:last-child){border-bottom:1px solid var(--border)}
+.result-key{color:var(--text2);font-size:12px}
+.result-val{font-weight:600;font-size:13px}
+.btn-run{
+  width:100%;padding:9px;border-radius:7px;border:none;
+  background:rgba(6,182,212,.12);color:var(--cyan);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:inherit;border:1px solid rgba(6,182,212,.25);
+}
+.btn-run:hover{background:rgba(6,182,212,.2)}
+.btn-run:disabled{opacity:.5;cursor:not-allowed}
+.btn-run.done-run{
+  background:rgba(34,201,151,.1);color:var(--green);border-color:rgba(34,201,151,.25);
+}
+
+/* ── LOG ── */
+.log-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;font-family:ui-monospace,'JetBrains Mono',monospace;font-size:12px;
+  height:200px;overflow-y:auto;margin-top:20px;
+}
+.log-line{padding:3px 0;border-bottom:1px solid rgba(30,50,84,.4);animation:fadeIn .25s ease}
+.log-line:last-child{border-bottom:none}
+.lt{color:var(--text3);margin-right:8px}
+.lok{color:var(--green)}
+.lwarn{color:var(--yellow)}
+.lerr{color:var(--red)}
+.linfo{color:var(--cyan)}
+
+/* ── AI ASSISTANT ── */
+.chat-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;height:280px;overflow-y:auto;margin-bottom:12px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.msg{padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6;max-width:85%}
+.msg-user{background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.2);align-self:flex-end;color:var(--text)}
+.msg-ai{background:var(--bg3);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
+.chat-input-row{display:flex;gap:8px}
+.chat-input{
+  flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;
+  transition:border-color .2s;
+}
+.chat-input:focus{border-color:var(--cyan)}
+
+/* ── TOUR OVERLAY ── */
+#tourOverlay{
+  position:fixed;inset:0;z-index:500;pointer-events:none;
+  background:rgba(5,12,26,.7);backdrop-filter:blur(2px);
+  display:none;
+}
+#tourOverlay.active{display:block}
+#tourPopup{
+  position:fixed;z-index:501;pointer-events:all;
+  background:var(--bg2);border:1px solid var(--cyan);border-radius:16px;
+  padding:24px 28px;max-width:380px;width:calc(100vw - 48px);
+  box-shadow:0 8px 48px rgba(6,182,212,.25);
+  transition:all .35s cubic-bezier(.34,1.56,.64,1);
+}
+.tour-step-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--cyan);margin-bottom:6px}
+.tour-title{font-size:18px;font-weight:800;margin-bottom:8px}
+.tour-body{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:20px}
+.tour-actions{display:flex;align-items:center;justify-content:space-between}
+.tour-dots{display:flex;gap:6px}
+.tour-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s}
+.tour-dot.active{background:var(--cyan)}
+.tour-dot.done{background:var(--green)}
+.tour-btns{display:flex;gap:8px}
+.btn-sm{padding:7px 14px;border-radius:6px;font-size:12px}
+
+/* ── BADGE / TAG ── */
+.badge{
+  display:inline-block;padding:2px 9px;border-radius:100px;
+  font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+}
+.badge-p0{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.badge-p1{background:rgba(249,115,22,.15);color:var(--orange);border:1px solid rgba(249,115,22,.3)}
+.badge-p2{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.badge-p3{background:rgba(34,201,151,.15);color:var(--green);border:1px solid rgba(34,201,151,.3)}
+.badge-ok{background:rgba(34,201,151,.15);color:var(--green);border:1px solid rgba(34,201,151,.3)}
+
+/* ── MISC ── */
+.pane-header{margin-bottom:24px}
+.pane-title{font-size:24px;font-weight:800;letter-spacing:-.3px;
+  background:linear-gradient(135deg,var(--cyan),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.pane-sub{font-size:14px;color:var(--text2);margin-top:4px}
+.section-head{font-size:15px;font-weight:700;margin:24px 0 12px;color:var(--text)}
+.progress-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .5s ease}
+.tag{display:inline-block;padding:2px 9px;border-radius:5px;font-size:11px;font-weight:600;
+  background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.tag-cyan{background:rgba(6,182,212,.1);color:var(--cyan);border-color:rgba(6,182,212,.25)}
+.tag-purple{background:rgba(168,85,247,.1);color:var(--purple);border-color:rgba(168,85,247,.25)}
+.tag-green{background:rgba(34,201,151,.1);color:var(--green);border-color:rgba(34,201,151,.25)}
+
+@media(max-width:680px){
+  .nav-tabs{display:none}
+  .pipeline{min-width:500px}
+  #tourPopup{max-width:calc(100vw-24px)}
+  .steps-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="nav-logo">defriends</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPane('overview')">Overview</button>
+    <button class="nav-tab" onclick="showPane('pipeline')">Pipeline</button>
+    <button class="nav-tab" onclick="showPane('controls')">Controls</button>
+    <button class="nav-tab" onclick="showPane('report')">Report</button>
+    <button class="nav-tab" onclick="showPane('ai')">AI Assistant</button>
+  </div>
+  <div class="nav-right">
+    <div class="status-pill"><span class="sdot"></span>Live</div>
+    <button class="btn btn-tour" onclick="startTour()">▶ Start Tour</button>
+    <button class="btn btn-ghost" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div id="main">
+
+  <!-- OVERVIEW PANE -->
+  <div id="pane-overview" class="pane active">
+    <div class="pane-header">
+      <div class="pane-title">Security Dashboard</div>
+      <div class="pane-sub">Welcome back — your assessment workspace is ready.</div>
+    </div>
+
+    <div class="overview-grid">
+      <div class="ov-card">
+        <div class="ov-icon">🛡️</div>
+        <div class="ov-val" style="color:var(--red)">P0</div>
+        <div class="ov-lbl">Risk Priority</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">📊</div>
+        <div class="ov-val" style="color:var(--orange)">8.4</div>
+        <div class="ov-lbl">Risk Score</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">✅</div>
+        <div class="ov-val" style="color:var(--green)">5</div>
+        <div class="ov-lbl">Controls Passed</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">⚠️</div>
+        <div class="ov-val" style="color:var(--yellow)">7</div>
+        <div class="ov-lbl">Controls Partial</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">❌</div>
+        <div class="ov-val" style="color:var(--red)">4</div>
+        <div class="ov-lbl">Controls Failed</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">📋</div>
+        <div class="ov-val" style="color:var(--cyan)">94%</div>
+        <div class="ov-lbl">Legitimacy Score</div>
+      </div>
+    </div>
+
+    <div class="section-head">Assessment Progress</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+      <div id="progressSteps" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="showPane('pipeline');startPipeline()">▶ Run Full Pipeline</button>
+      <button class="btn btn-tour" onclick="startTour()">▶ Start Guided Tour</button>
+    </div>
+  </div>
+
+  <!-- PIPELINE PANE -->
+  <div id="pane-pipeline" class="pane">
+    <div class="pane-header">
+      <div class="pane-title">Assessment Pipeline</div>
+      <div class="pane-sub">8 steps from evidence ingestion to a verified risk report.</div>
+    </div>
+
+    <div class="pipeline-wrap">
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+
+    <div class="steps-grid" id="stepsGrid"></div>
+
+    <div class="log-box" id="logBox">
+      <div class="log-line"><span class="lt">00:00</span><span class="linfo">Pipeline ready — click Run on any step or use "Run Full Pipeline"</span></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS PANE -->
+  <div id="pane-controls" class="pane">
+    <div class="pane-header">
+      <div class="pane-title">Control Domains</div>
+      <div class="pane-sub">NIST SP 800-53 + ISO/IEC 27001:2022 enrichment with remediation steps.</div>
+    </div>
+    <div id="controlsGrid" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+
+  <!-- REPORT PANE -->
+  <div id="pane-report" class="pane">
+    <div class="pane-header">
+      <div class="pane-title">Assessment Report</div>
+      <div class="pane-sub">Plain-language summary for technical and non-technical stakeholders.</div>
+    </div>
+    <div id="reportContent" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+
+  <!-- AI ASSISTANT PANE -->
+  <div id="pane-ai" class="pane">
+    <div class="pane-header">
+      <div class="pane-title">AI Assistant</div>
+      <div class="pane-sub">Ask plain-language questions about your assessment results.</div>
+    </div>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Ask: What should I do next?" onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="btn btn-primary" onclick="sendChat()">Send →</button>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="quickAsk('What should I do next?')" style="font-size:12px">What should I do next?</button>
+      <button class="btn btn-ghost" onclick="quickAsk('Explain the top risk finding.')" style="font-size:12px">Explain the top risk</button>
+      <button class="btn btn-ghost" onclick="quickAsk('Summarize the control gaps.')" style="font-size:12px">Summarize control gaps</button>
+      <button class="btn btn-ghost" onclick="quickAsk('Is the report legitimate?')" style="font-size:12px">Is the report legit?</button>
+    </div>
+  </div>
+
+</div><!-- /#main -->
+
+<!-- TOUR OVERLAY -->
+<div id="tourOverlay"></div>
+<div id="tourPopup" style="display:none">
+  <div class="tour-step-label" id="tourLabel">Step 1 of 8</div>
+  <div class="tour-title" id="tourTitle"></div>
+  <div class="tour-body" id="tourBody"></div>
+  <div class="tour-actions">
+    <div class="tour-dots" id="tourDots"></div>
+    <div class="tour-btns">
+      <button class="btn btn-ghost btn-sm" id="tourPrev" onclick="tourPrevStep()">← Back</button>
+      <button class="btn btn-primary btn-sm" id="tourNext" onclick="tourNextStep()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   DATA
+   ================================================================ */
+const STEPS = [
+  {
+    id:'ingest', icon:'📥', name:'Ingestion', num:1,
+    desc:'Load the authorized assessment record and submit it to the pipeline.',
+    what:'Loads a sample evidence record (device ID, finding type, CVSS metadata) into the pipeline intake.',
+    result: {
+      record_id: 'REC-2024-0042',
+      device_id: 'DEV-EDGE-001',
+      finding_type: 'CVE-2024-1234',
+      status: '✅ Accepted'
+    },
+    resultStyle:{'status':'var(--green)'}
+  },
+  {
+    id:'normalize', icon:'🔄', name:'Normalizer', num:2,
+    desc:'Prepare the record consistently for downstream assessment.',
+    what:'Normalizes field names, timestamps, and CVSS values to a canonical schema.',
+    result:{
+      cvss_v3: '8.4',
+      vector: 'AV:N/AC:L/PR:N/UI:N',
+      normalized_at: new Date().toISOString(),
+      status: '✅ Normalized'
+    },
+    resultStyle:{status:'var(--green)'}
+  },
+  {
+    id:'map', icon:'🗺️', name:'Mapping', num:3,
+    desc:'Link findings to CWE and MITRE ATT&CK techniques.',
+    what:'Applies the YAML rule engine to associate the normalized finding with known attack patterns.',
+    result:{
+      cwe: 'CWE-79 (XSS)',
+      mitre_technique: 'T1059.007',
+      tactic: 'Execution',
+      status: '✅ Mapped'
+    },
+    resultStyle:{status:'var(--green)'}
+  },
+  {
+    id:'score', icon:'📊', name:'Scoring', num:4,
+    desc:'Compute a priority and risk score for the finding.',
+    what:'Combines CVSS, EPSS probability, KEV membership, and reachability into a P0–P3 priority.',
+    result:{
+      priority: 'P0 (Critical)',
+      risk_score: '8.4',
+      epss_pct: '97th',
+      kev_listed: 'Yes',
+      status: '✅ Scored'
+    },
+    resultStyle:{priority:'var(--red)',status:'var(--green)'}
+  },
+  {
+    id:'report', icon:'📋', name:'Reporting', num:5,
+    desc:'Generate a plain-language device risk report.',
+    what:'Assembles a structured report with bottom line, risks found, and recommendations.',
+    result:{
+      sections: '5',
+      recommendations: '4',
+      pdf_ready: 'Yes',
+      status: '✅ Generated'
+    },
+    resultStyle:{status:'var(--green)'}
+  },
+  {
+    id:'controls', icon:'🏛️', name:'Controls', num:6,
+    desc:'Review NIST SP 800-53 and ISO/IEC 27001:2022 domain gaps.',
+    what:'Enriches the report with control domain pass/partial/fail status and remediation actions.',
+    result:{
+      passed: '5',
+      partial: '7',
+      failed: '4',
+      status: '✅ Enriched'
+    },
+    resultStyle:{failed:'var(--red)',status:'var(--green)'}
+  },
+  {
+    id:'legitimacy', icon:'✅', name:'Legitimacy', num:7,
+    desc:'Verify that totals, evidence, controls, and recommendations agree.',
+    what:'Cross-checks the report for internal consistency and assigns a legitimacy confidence score.',
+    result:{
+      verdict: 'LEGITIMATE',
+      confidence: '94%',
+      checks_passed: '8 / 8',
+      status: '✅ Verified'
+    },
+    resultStyle:{verdict:'var(--green)',status:'var(--green)'}
+  },
+  {
+    id:'ai', icon:'🤖', name:'AI Assistant', num:8,
+    desc:'Ask for plain-language next-action guidance.',
+    what:'The assistant interprets your results and suggests safe, prioritized remediation steps.',
+    result:{
+      suggested_action: 'Patch CVE-2024-1234 immediately',
+      priority: 'P0 — within 24 h',
+      status: '✅ Ready'
+    },
+    resultStyle:{priority:'var(--red)',status:'var(--green)'}
+  }
+];
+
+const CONTROLS = [
+  {name:'Flaw Remediation',domain:'NIST SI-2',status:'fail',fix:'Apply patches within 30 days for High/Critical CVEs.'},
+  {name:'Boundary Protection',domain:'NIST SC-7',status:'partial',fix:'Review firewall rules and segment untrusted networks.'},
+  {name:'Config Change Control',domain:'NIST CM-3',status:'fail',fix:'Enforce change approval workflow before deployments.'},
+  {name:'Vulnerability Scanning',domain:'NIST RA-5',status:'partial',fix:'Schedule authenticated scans at least monthly.'},
+  {name:'Continuous Monitoring',domain:'NIST CA-7',status:'pass',fix:''},
+  {name:'Incident Handling',domain:'NIST IR-4',status:'pass',fix:''},
+  {name:'Technical Vulnerability Mgmt',domain:'ISO 8.8',status:'fail',fix:'Maintain a vulnerability register with remediation SLAs.'},
+  {name:'Threat Intelligence',domain:'ISO 5.7',status:'partial',fix:'Subscribe to sector-specific threat intel feeds.'},
+  {name:'Network Security',domain:'ISO 8.20',status:'pass',fix:''},
+  {name:'Malware Protection',domain:'ISO 8.7',status:'pass',fix:''},
+  {name:'Secure Dev Lifecycle',domain:'ISO 8.25',status:'fail',fix:'Adopt SAST/DAST in CI/CD pipelines.'},
+  {name:'Monitoring Activities',domain:'ISO 8.16',status:'pass',fix:''},
+];
+
+const TOUR_STEPS = [
+  {title:'Welcome to defriends',label:'Tour — Intro',
+   body:'This guided tour walks you through the 8-step assessment pipeline. Click <strong>Next</strong> to begin with Step 1: Ingestion.',
+   pane:'overview'},
+  {title:'Step 1 — Ingestion',label:'Tour — Step 1 / 8',
+   body:'Go to the <strong>Pipeline</strong> tab and click <strong>Run</strong> on the Ingestion card. This loads your authorized assessment record into the pipeline.',
+   pane:'pipeline',step:0},
+  {title:'Step 2 — Normalizer',label:'Tour — Step 2 / 8',
+   body:'Click <strong>Run</strong> on the Normalizer card. The app standardizes field names, timestamps, and CVSS values so downstream steps receive consistent data.',
+   pane:'pipeline',step:1},
+  {title:'Step 3 — Mapping',label:'Tour — Step 3 / 8',
+   body:'Click <strong>Run</strong> on the Mapping card. The YAML rule engine links the finding to CWE and MITRE ATT&CK techniques automatically.',
+   pane:'pipeline',step:2},
+  {title:'Step 4 — Scoring',label:'Tour — Step 4 / 8',
+   body:'Click <strong>Run</strong> on the Scoring card. CVSS, EPSS, KEV membership, and reachability are combined into a P0–P3 priority.',
+   pane:'pipeline',step:3},
+  {title:'Step 5 — Reporting',label:'Tour — Step 5 / 8',
+   body:'Click <strong>Run</strong> on the Reporting card. A structured plain-language report is assembled — viewable in the <strong>Report</strong> tab.',
+   pane:'pipeline',step:4},
+  {title:'Step 6 — Controls',label:'Tour — Step 6 / 8',
+   body:'Open the <strong>Controls</strong> tab to see which NIST / ISO domains passed, are partial, or failed — with concrete remediation steps for each.',
+   pane:'controls'},
+  {title:'Step 7 — Legitimacy',label:'Tour — Step 7 / 8',
+   body:'Click <strong>Run</strong> on the Legitimacy card. Eight cross-checks verify that totals, evidence, controls, and recommendations are mutually consistent.',
+   pane:'pipeline',step:6},
+  {title:'Step 8 — AI Assistant',label:'Tour — Step 8 / 8',
+   body:'Open the <strong>AI Assistant</strong> tab and ask <em>"What should I do next?"</em> — the assistant provides plain-language guidance and safe action suggestions.',
+   pane:'ai'},
+  {title:'Tour complete! 🎉',label:'Tour — Done',
+   body:'You have seen the full 8-step assessment pipeline. All results are in the <strong>Report</strong> tab. Close this overlay whenever you are ready.',
+   pane:'report'},
+];
+
+const AI_RESPONSES = {
+  'what should i do next':
+    '🔴 <strong>Immediate (P0):</strong> Patch CVE-2024-1234 on DEV-EDGE-001 — it is KEV-listed with a 97th-percentile EPSS score. Check vendor advisory for an emergency patch.<br><br>🟡 <strong>This week:</strong> Review the 4 failed control domains (SI-2, CM-3, ISO 8.8, ISO 8.25) and open remediation tickets with 30-day SLAs.<br><br>🟢 <strong>This month:</strong> Schedule an authenticated vulnerability scan (RA-5 gap) and subscribe to sector threat intel (ISO 5.7).',
+  'explain the top risk':
+    '🔍 The top finding is <strong>CVE-2024-1234</strong> (CVSS 8.4 / Critical) on device <code>DEV-EDGE-001</code>. It maps to <strong>CWE-79 (XSS)</strong> and MITRE technique <strong>T1059.007</strong> (Execution via script injection). It is on CISA KEV, meaning active exploitation is confirmed in the wild.',
+  'summarize the control gaps':
+    '📋 4 control domains failed:<ul style="margin:8px 0 0 16px"><li><strong>SI-2</strong> — No patch SLA process</li><li><strong>CM-3</strong> — No change approval workflow</li><li><strong>ISO 8.8</strong> — No vulnerability register</li><li><strong>ISO 8.25</strong> — No SAST/DAST in CI/CD</li></ul>7 domains are partial and need improvement. 5 domains pass.',
+  'is the report legitimate':
+    '✅ Legitimacy verdict: <strong>LEGITIMATE</strong> (94% confidence). All 8 cross-checks passed — totals, risk evidence count, control counts, and recommendations are mutually consistent. The report can be shared with stakeholders.',
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const stepState = STEPS.map(()=>({done:false, running:false}));
+let tourIndex = 0;
+
+/* ================================================================
+   INIT
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildPipeline();
+  buildStepCards();
+  buildControls();
+  buildReport();
+  buildProgressSteps();
+  addChatMsg('ai','👋 Hello! I\'m your AI assistant. Ask me about your assessment — try <em>"What should I do next?"</em>');
+});
+
+/* ================================================================
+   PANE NAV
+   ================================================================ */
+function showPane(id){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    const ids=['overview','pipeline','controls','report','ai'];
+    t.classList.toggle('active',ids[i]===id);
+  });
+}
+
+/* ================================================================
+   PIPELINE
+   ================================================================ */
+function buildPipeline(){
+  const wrap = document.getElementById('pipeline');
+  STEPS.forEach((s,i)=>{
+    const node = document.createElement('div');
+    node.className='pipe-node';node.id='pn-'+i;
+    node.innerHTML=`<div class="pipe-circle" id="pc-${i}"><span class="pipe-num">${s.num}</span>${s.icon}</div><div class="pipe-label">${s.name}</div>`;
+    node.onclick=()=>scrollToStep(i);
+    wrap.appendChild(node);
+    if(i<STEPS.length-1){
+      const c=document.createElement('div');
+      c.className='pipe-connector';c.id='pconn-'+i;
+      c.innerHTML='<div class="fill"></div>';
+      wrap.appendChild(c);
+    }
+  });
+}
+
+function buildStepCards(){
+  const grid = document.getElementById('stepsGrid');
+  STEPS.forEach((s,i)=>{
+    const card = document.createElement('div');
+    card.className='step-card';card.id='sc-'+i;
+    const resultRows = Object.entries(s.result).map(([k,v])=>{
+      const color = s.resultStyle&&s.resultStyle[k]?`color:${s.resultStyle[k]}`:'';
+      return `<div class="result-row"><span class="result-key">${k.replace(/_/g,' ')}</span><span class="result-val" style="${color}">${v}</span></div>`;
+    }).join('');
+    card.innerHTML=`
+      <div class="step-header">
+        <div class="step-badge" id="sb-${i}">${s.icon}</div>
+        <div class="step-info"><h3>${s.name}</h3><span>Step ${s.num} of 8</span></div>
+      </div>
+      <div class="step-body">${s.what}</div>
+      <div class="step-result" id="sr-${i}">${resultRows}</div>
+      <button class="btn-run" id="btn-${i}" onclick="runStep(${i})">▶ Run ${s.name}</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function scrollToStep(i){
+  document.getElementById('sc-'+i)?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+async function runStep(i){
+  if(stepState[i].done||stepState[i].running)return;
+  stepState[i].running=true;
+  const btn=document.getElementById('btn-'+i);
+  const card=document.getElementById('sc-'+i);
+  const pn=document.getElementById('pn-'+i);
+  btn.disabled=true;btn.textContent='Running…';
+  card.classList.add('active-step');
+  pn.classList.add('active');
+  document.getElementById('sb-'+i).classList.add('active-b');
+  addLog('info',`Running ${STEPS[i].name}…`);
+  await sleep(900+Math.random()*600);
+  addLog('ok',`${STEPS[i].name} complete — ${Object.values(STEPS[i].result).slice(-1)[0]}`);
+  stepState[i].done=true;stepState[i].running=false;
+  card.classList.remove('active-step');card.classList.add('done-step');
+  pn.classList.remove('active');pn.classList.add('done');
+  document.getElementById('sb-'+i).classList.remove('active-b');
+  document.getElementById('sb-'+i).classList.add('done-b');
+  document.getElementById('sr-'+i).classList.add('show');
+  btn.textContent='✓ Done';btn.classList.add('done-run');
+  if(i>0){const c=document.getElementById('pconn-'+(i-1));if(c)c.classList.add('done');}
+  updateProgress();
+}
+
+async function startPipeline(){
+  for(let i=0;i<STEPS.length;i++){
+    if(!stepState[i].done)await runStep(i);
+    await sleep(200);
+  }
+}
+
+function addLog(type,msg){
+  const box=document.getElementById('logBox');
+  const t=new Date().toTimeString().slice(0,8);
+  const cls={ok:'lok',warn:'lwarn',err:'lerr',info:'linfo'}[type]||'';
+  const line=document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="lt">${t}</span><span class="${cls}">${msg}</span>`;
+  box.appendChild(line);
+  box.scrollTop=box.scrollHeight;
+}
+
+/* ================================================================
+   CONTROLS
+   ================================================================ */
+function buildControls(){
+  const grid=document.getElementById('controlsGrid');
+  CONTROLS.forEach(c=>{
+    const el=document.createElement('div');
+    el.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:border-color .2s';
+    el.onmouseenter=()=>el.style.borderColor='rgba(6,182,212,.3)';
+    el.onmouseleave=()=>el.style.borderColor='var(--border)';
+    const ico=c.status==='pass'?'✅':c.status==='partial'?'⚠️':'❌';
+    const col=c.status==='pass'?'var(--green)':c.status==='partial'?'var(--yellow)':'var(--red)';
+    el.innerHTML=`
+      <div style="font-size:22px;flex-shrink:0">${ico}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700">${c.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${c.domain}</div>
+        ${c.fix?`<div style="font-size:12px;color:var(--text2);margin-top:6px;padding:8px 10px;background:var(--bg3);border-radius:6px;border-left:3px solid ${col}">💡 ${c.fix}</div>`:''}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:${col};flex-shrink:0;text-transform:uppercase">${c.status}</div>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+/* ================================================================
+   REPORT
+   ================================================================ */
+function buildReport(){
+  const el=document.getElementById('reportContent');
+  const sections=[
+    {icon:'📌',title:'Bottom Line',
+     body:'Device <strong>DEV-EDGE-001</strong> has a <strong>P0 Critical</strong> vulnerability (CVE-2024-1234, CVSS 8.4) that is actively exploited in the wild. Immediate patching is required.'},
+    {icon:'🔴',title:'What To Do First',
+     body:'1. Patch CVE-2024-1234 immediately — vendor patch is available.<br>2. Isolate the device from untrusted network segments until patched.<br>3. Review access logs for signs of exploitation since discovery date.'},
+    {icon:'📊',title:'Risks Found',
+     body:'<span class="badge badge-p0">P0</span> CVE-2024-1234 — CVSS 8.4 · XSS (CWE-79) · T1059.007<br><br>Risk Score: <strong>8.4</strong> · EPSS: 97th percentile · KEV Listed: Yes'},
+    {icon:'🏛️',title:'Control Domain Gaps',
+     body:'Failed: SI-2 (Flaw Remediation), CM-3 (Config Change Control), ISO 8.8 (Vuln Mgmt), ISO 8.25 (Secure Dev Lifecycle)<br>Partial: 7 additional domains require improvement.'},
+    {icon:'✅',title:'Why The Results Are Legit',
+     body:'Legitimacy verdict: <strong>LEGITIMATE</strong> — 94% confidence. All 8 cross-checks passed. Totals, evidence count, control counts, and recommendations are mutually consistent.'},
+  ];
+  sections.forEach(s=>{
+    const card=document.createElement('div');
+    card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px';
+    card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:20px">${s.icon}</span><div style="font-size:15px;font-weight:700">${s.title}</div></div><div style="font-size:13px;color:var(--text2);line-height:1.7">${s.body}</div>`;
+    el.appendChild(card);
+  });
+}
+
+/* ================================================================
+   PROGRESS STEPS (OVERVIEW)
+   ================================================================ */
+function buildProgressSteps(){
+  const el=document.getElementById('progressSteps');
+  STEPS.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.id='prog-'+i;
+    row.style.cssText='display:flex;align-items:center;gap:12px';
+    row.innerHTML=`<div style="font-size:14px">${s.icon}</div><div style="flex:1"><div style="font-size:13px;font-weight:600">${s.name}</div><div id="progbar-${i}" class="progress-bar" style="margin-top:4px"><div class="progress-fill" style="width:0%"></div></div></div><div id="progtag-${i}" class="tag" style="font-size:11px;flex-shrink:0">Pending</div>`;
+    el.appendChild(row);
+  });
+}
+
+function updateProgress(){
+  STEPS.forEach((_,i)=>{
+    const bar=document.querySelector(`#progbar-${i} .progress-fill`);
+    const tag=document.getElementById('progtag-'+i);
+    if(stepState[i].done){
+      if(bar)bar.style.width='100%';
+      if(tag){tag.textContent='Done';tag.className='tag tag-green';}
+    } else if(stepState[i].running){
+      if(bar)bar.style.width='50%';
+      if(tag){tag.textContent='Running';tag.className='tag tag-cyan';}
+    }
+  });
+}
+
+/* ================================================================
+   AI ASSISTANT
+   ================================================================ */
+function addChatMsg(role, html){
+  const box=document.getElementById('chatBox');
+  const msg=document.createElement('div');
+  msg.className=role==='user'?'msg msg-user':'msg msg-ai';
+  msg.innerHTML=html;
+  box.appendChild(msg);
+  box.scrollTop=box.scrollHeight;
+}
+
+function quickAsk(q){document.getElementById('chatInput').value=q;sendChat();}
+
+function sendChat(){
+  const inp=document.getElementById('chatInput');
+  const q=inp.value.trim();if(!q)return;
+  inp.value='';
+  addChatMsg('user',q);
+  const key=q.toLowerCase().replace(/[^a-z ]/g,'').trim();
+  let answer='I don\'t have a specific answer for that. Try asking about next steps, the top risk, control gaps, or report legitimacy.';
+  for(const [k,v] of Object.entries(AI_RESPONSES)){
+    if(key.includes(k)||k.split(' ').filter(w=>w.length>3).every(w=>key.includes(w))){answer=v;break;}
+  }
+  setTimeout(()=>addChatMsg('ai',answer),400+Math.random()*300);
+}
+
+/* ================================================================
+   GUIDED TOUR
+   ================================================================ */
+function startTour(){
+  tourIndex=0;
+  renderTourStep();
+  document.getElementById('tourOverlay').classList.add('active');
+  document.getElementById('tourPopup').style.display='block';
+}
+
+function closeTour(){
+  document.getElementById('tourOverlay').classList.remove('active');
+  document.getElementById('tourPopup').style.display='none';
+}
+
+function renderTourStep(){
+  const t=TOUR_STEPS[tourIndex];
+  document.getElementById('tourLabel').textContent=t.label;
+  document.getElementById('tourTitle').textContent=t.title;
+  document.getElementById('tourBody').innerHTML=t.body;
+  document.getElementById('tourPrev').style.display=tourIndex===0?'none':'';
+  document.getElementById('tourNext').textContent=tourIndex===TOUR_STEPS.length-1?'Close ✕':'Next →';
+
+  // dots
+  const dots=document.getElementById('tourDots');
+  dots.innerHTML='';
+  TOUR_STEPS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='tour-dot'+(i===tourIndex?' active':i<tourIndex?' done':'');
+    dots.appendChild(d);
+  });
+
+  // position popup
+  const popup=document.getElementById('tourPopup');
+  popup.style.bottom='32px';popup.style.right='24px';popup.style.top='auto';popup.style.left='auto';
+
+  // navigate pane
+  if(t.pane) showPane(t.pane);
+  if(typeof t.step==='number'){
+    setTimeout(()=>scrollToStep(t.step),200);
+    // highlight target card
+    document.querySelectorAll('.step-card').forEach((c,i)=>c.style.outline=i===t.step?'2px solid var(--purple)':'none');
+  } else {
+    document.querySelectorAll('.step-card').forEach(c=>c.style.outline='none');
+  }
+}
+
+function tourNextStep(){
+  if(tourIndex>=TOUR_STEPS.length-1){closeTour();document.querySelectorAll('.step-card').forEach(c=>c.style.outline='none');return;}
+  tourIndex++;renderTourStep();
+}
+function tourPrevStep(){
+  if(tourIndex>0){tourIndex--;renderTourStep();}
+}
+
+// Close tour on overlay click
+document.getElementById('tourOverlay').addEventListener('click',closeTour);
+
+/* ================================================================
+   AUTH
+   ================================================================ */
+async function logout(){
+  await fetch('/v1/auth/logout',{method:'POST'});
+  window.location.href='/login';
+}
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+</script>
+</body>
+</html>

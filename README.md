@@ -4,8 +4,20 @@ defriends is an authorized device security assessment workspace. It helps a user
 
 The public surface is intentionally small. The dashboard, API docs, user portal, and capability manifest require login so the product idea and assessment workflow are not exposed to casual visitors.
 
+## UI Entry Points
+
+| Page | URL | Access |
+|---|---|---|
+| Landing page | `http://127.0.0.1:8080/` | Public |
+| Login / Register | `http://127.0.0.1:8080/login` | Public |
+| Dashboard + Guided Tour | `http://127.0.0.1:8080/ui` | Login required |
+| Health check | `http://127.0.0.1:8080/health` | Public |
+
+After logging in, click **▶ Start Tour** in the dashboard to walk through the 8-step guided assessment pipeline (Ingestion → Normalizer → Mapping → Scoring → Reporting → Controls → Legitimacy → AI Assistant).
+
 ## Table of Contents
 
+- [UI Entry Points](#ui-entry-points)
 - [Interactive Demo](#interactive-demo)
 - [API Quick Checks](#api-quick-checks)
 - [Control Domains Included](#control-domains-included)
@@ -225,9 +237,10 @@ pytest tests/ -v
 
 ## Key Files
 
-- `app_unified.py` - FastAPI app, protected pages, unified routes, auth, and gateway helpers.
-- `static/login.html` - login screen for authorized users.
-- `static/dashboard.html` - interactive dashboard demo.
+- `app_unified.py` - FastAPI app, public landing, auth, protected pages, and static serving.
+- `static/landing.html` - public landing page (colorful, animated, no login required).
+- `static/login.html` - login and registration page.
+- `static/dashboard.html` - authenticated dashboard with 8-step guided tour.
 - `services/reporting/app/control_domains.py` - NIST/ISO control catalog and enrichment.
 - `services/reporting/app/legitimacy.py` - legitimacy confidence checks.
 - `services/reporting/app/pdf_renderer.py` - layman-friendly PDF report.
