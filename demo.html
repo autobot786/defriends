@@ -1008,8 +1008,12 @@ const state = {
 // ================================================================
 // NAVIGATION
 // ================================================================
-// anchor alias map: README deep-link → internal section id
-const ANCHOR_MAP = { pipeline:'pipeline', consent:'consent', scoring:'scorer', mitre:'mitre', remediation:'remediation', feed:'feed' };
+// ANCHOR_MAP: only entries where the README anchor name differs from the internal section id.
+// All other sections (pipeline, consent, mitre, remediation, feed) use the same name for both.
+const ANCHOR_MAP = { scoring: 'scorer' };
+// Pre-built reverse map for O(1) lookup: internal id → anchor name used in URLs
+const _SECTION_TO_ANCHOR = Object.fromEntries(Object.entries(ANCHOR_MAP).map(([k, v]) => [v, k]));
+const _VALID_SECTION_IDS = new Set(['pipeline','consent','scorer','mitre','remediation','feed']);
 
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1020,8 +1024,7 @@ function showSection(id) {
   tabs[names.indexOf(id)]?.classList.add('active');
 
   // update URL hash so deep links are shareable
-  const hashKey = Object.keys(ANCHOR_MAP).find(k => ANCHOR_MAP[k] === id) || id;
-  history.replaceState(null, '', '#' + hashKey);
+  history.replaceState(null, '', '#' + (_SECTION_TO_ANCHOR[id] || id));
 
   if (id === 'scorer' && !state.gaugeChart) initGauge();
   if (id === 'mitre') renderMitreGrid();
@@ -1031,8 +1034,9 @@ function showSection(id) {
 // deep-link: navigate to the section indicated by the URL hash on load
 document.addEventListener('DOMContentLoaded', function () {
   const hash = window.location.hash.replace('#', '').toLowerCase();
-  if (hash && ANCHOR_MAP[hash]) {
-    showSection(ANCHOR_MAP[hash]);
+  if (hash) {
+    const sectionId = ANCHOR_MAP[hash] || hash;
+    if (_VALID_SECTION_IDS.has(sectionId)) showSection(sectionId);
   }
 });
 
