@@ -553,6 +553,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 1: PIPELINE
      ================================================================ -->
+<a id="pipeline" aria-hidden="true"></a>
 <section id="sec-pipeline" class="section active">
   <div class="section-title">8-Layer Security Pipeline</div>
   <div class="section-sub">Consent-first evidence processing — from raw signal to prioritised finding</div>
@@ -630,6 +631,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 2: CONSENT WIZARD
      ================================================================ -->
+<a id="consent" aria-hidden="true"></a>
 <section id="sec-consent" class="section">
   <div class="section-title">Consent Grant Wizard</div>
   <div class="section-sub">GDPR · CCPA · HIPAA compliant consent receipts with hash-chain provenance</div>
@@ -768,6 +770,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 3: RISK SCORER
      ================================================================ -->
+<a id="scoring" aria-hidden="true"></a>
 <section id="sec-scorer" class="section">
   <div class="section-title">Interactive Risk Scorer</div>
   <div class="section-sub">Real-time P0–P3 priority calculation using CVSS · EPSS · KEV · Reachability</div>
@@ -866,6 +869,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 4: MITRE ATT&CK
      ================================================================ -->
+<a id="mitre" aria-hidden="true"></a>
 <section id="sec-mitre" class="section">
   <div class="section-title">MITRE ATT&CK Map</div>
   <div class="section-sub">CWE → technique mapping via YAML rule engine · Click any card to expand</div>
@@ -907,6 +911,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 5: REMEDIATION
      ================================================================ -->
+<a id="remediation" aria-hidden="true"></a>
 <section id="sec-remediation" class="section">
   <div class="section-title">Remediation Playbooks</div>
   <div class="section-sub">Dry-run step-by-step fixes with consent-gated apply — sorted P0 → P1 → P2</div>
@@ -919,6 +924,7 @@ footer span { color:var(--cyan); }
 <!-- ================================================================
      SECTION 6: LIVE FEED
      ================================================================ -->
+<a id="feed" aria-hidden="true"></a>
 <section id="sec-feed" class="section">
   <div class="section-title">Live Behavioral Event Feed</div>
   <div class="section-sub">UEBA anomaly signals mapped to MITRE ATT&CK in real-time</div>
@@ -1002,6 +1008,13 @@ const state = {
 // ================================================================
 // NAVIGATION
 // ================================================================
+// ANCHOR_MAP: only entries where the README anchor name differs from the internal section id.
+// All other sections (pipeline, consent, mitre, remediation, feed) use the same name for both.
+const ANCHOR_MAP = { scoring: 'scorer' };
+// Pre-built reverse map for O(1) lookup: internal id → anchor name used in URLs
+const _SECTION_TO_ANCHOR = Object.fromEntries(Object.entries(ANCHOR_MAP).map(([k, v]) => [v, k]));
+const _VALID_SECTION_IDS = new Set(['pipeline','consent','scorer','mitre','remediation','feed']);
+
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1010,10 +1023,22 @@ function showSection(id) {
   const names = ['pipeline','consent','scorer','mitre','remediation','feed'];
   tabs[names.indexOf(id)]?.classList.add('active');
 
+  // update URL hash so deep links are shareable
+  history.replaceState(null, '', '#' + (_SECTION_TO_ANCHOR[id] || id));
+
   if (id === 'scorer' && !state.gaugeChart) initGauge();
   if (id === 'mitre') renderMitreGrid();
   if (id === 'remediation') renderRemediation();
 }
+
+// deep-link: navigate to the section indicated by the URL hash on load
+document.addEventListener('DOMContentLoaded', function () {
+  const hash = window.location.hash.replace('#', '').toLowerCase();
+  if (hash) {
+    const sectionId = ANCHOR_MAP[hash] || hash;
+    if (_VALID_SECTION_IDS.has(sectionId)) showSection(sectionId);
+  }
+});
 
 // ================================================================
 // SECTION 1: PIPELINE
