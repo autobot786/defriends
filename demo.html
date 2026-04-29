@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>defriends — Consent-First Defensive Security Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0a0e1a;
+  --bg2:      #0f1629;
+  --bg3:      #141d35;
+  --border:   #1e2d4a;
+  --cyan:     #06b6d4;
+  --green:    #22c997;
+  --yellow:   #f59e0b;
+  --orange:   #f97316;
+  --red:      #ef4444;
+  --purple:   #a855f7;
+  --text:     #e2e8f0;
+  --text2:    #94a3b8;
+  --text3:    #64748b;
+  --glow-c:   0 0 20px rgba(6,182,212,0.4);
+  --glow-g:   0 0 20px rgba(34,201,151,0.4);
+  --glow-r:   0 0 20px rgba(239,68,68,0.5);
+  --radius:   12px;
+  --radius-sm:8px;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+/* ===== NAVBAR ===== */
+#navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,14,26,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0;
+  padding: 0 24px;
+  height: 58px;
+}
+.nav-logo {
+  font-weight: 700; font-size: 18px; color: var(--cyan);
+  text-shadow: var(--glow-c); letter-spacing: -0.3px;
+  margin-right: 28px; white-space: nowrap; flex-shrink: 0;
+}
+.nav-tabs { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+.nav-tab {
+  padding: 8px 14px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text2);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+  font-family: inherit;
+}
+.nav-tab:hover { background: var(--bg3); color: var(--text); }
+.nav-tab.active { background: rgba(6,182,212,0.15); color: var(--cyan); }
+.nav-status {
+  margin-left: auto; padding-left: 20px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text2);
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34,201,151,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(34,201,151,0); }
+}
+
+/* ===== MAIN CONTENT ===== */
+#main { padding-top: 58px; }
+.section { display: none; min-height: calc(100vh - 58px); padding: 32px 24px; max-width: 1200px; margin: 0 auto; }
+.section.active { display: block; }
+
+/* ===== COMMON COMPONENTS ===== */
+.section-title {
+  font-size: 26px; font-weight: 700; margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.section-sub { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.card-sm { padding: 14px 16px; border-radius: var(--radius-sm); }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 8px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.btn-primary { background: var(--cyan); color: #0a0e1a; }
+.btn-primary:hover { background: #22d3ee; box-shadow: var(--glow-c); }
+.btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-success { background: var(--green); color: #0a0e1a; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 100px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.badge-p0 { background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge-p1 { background: rgba(249,115,22,0.2); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+.badge-p2 { background: rgba(245,158,11,0.2); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+.badge-p3 { background: rgba(34,201,151,0.2); color: var(--green); border: 1px solid rgba(34,201,151,0.3); }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 500; background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border);
+}
+.tag-cyan { background: rgba(6,182,212,0.1); color: var(--cyan); border-color: rgba(6,182,212,0.3); }
+.tag-purple { background: rgba(168,85,247,0.1); color: var(--purple); border-color: rgba(168,85,247,0.3); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media(max-width: 768px) { .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+.mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; } .mt-6 { margin-top: 24px; }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; }
+.text-sm { font-size: 13px; } .text-xs { font-size: 11px; }
+.text-cyan { color: var(--cyan); } .text-green { color: var(--green); }
+.text-red { color: var(--red); } .text-yellow { color: var(--yellow); }
+.text-muted { color: var(--text2); } .text-dim { color: var(--text3); }
+.w-full { width: 100%; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes glow-pulse { 0%,100%{box-shadow:0 0 8px rgba(6,182,212,0.3);} 50%{box-shadow:0 0 24px rgba(6,182,212,0.7);} }
+@keyframes slide-right { from{transform:translateX(-100%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+@keyframes packet-move { from{left:-20px;} to{left:calc(100% + 20px);} }
+@keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes flash-red { 0%,100%{background:var(--bg2);} 50%{background:rgba(239,68,68,0.15);} }
+.animate-in { animation: fadeIn .3s ease forwards; }
+
+/* ========================================================
+   SECTION 1: PIPELINE
+   ======================================================== */
+.pipeline-stages {
+  display: flex; align-items: center; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+  position: relative;
+}
+.pipeline-connector {
+  flex-shrink: 0; height: 2px; width: 28px;
+  background: var(--border); position: relative; overflow: hidden;
+}
+.pipeline-connector .connector-fill {
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  transition: left .3s ease;
+}
+.pipeline-connector.active .connector-fill { left: 0; }
+
+.stage-node {
+  flex-shrink: 0; width: 86px; position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.stage-circle {
+  width: 54px; height: 54px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; position: relative; transition: all .4s ease;
+  cursor: default;
+}
+.stage-circle .layer-num {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  font-size: 9px; font-weight: 700; color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace;
+}
+.stage-node .stage-label {
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  text-align: center; line-height: 1.3; max-width: 80px;
+  transition: color .3s;
+}
+.stage-node.active .stage-circle {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6,182,212,0.15), var(--glow-c);
+  background: rgba(6,182,212,0.1);
+  animation: glow-pulse 1s ease infinite;
+}
+.stage-node.active .stage-label { color: var(--cyan); }
+.stage-node.done .stage-circle { border-color: var(--green); background: rgba(34,201,151,0.08); }
+.stage-node.done .stage-label { color: var(--green); }
+
+.pipeline-log {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  height: 240px; overflow-y: auto; margin-top: 20px;
+  position: relative;
+}
+.pipeline-log-entry {
+  padding: 3px 0; border-bottom: 1px solid rgba(30,45,74,0.5);
+  animation: fadeIn .3s ease;
+}
+.pipeline-log-entry:last-child { border-bottom: none; }
+.log-time { color: var(--text3); margin-right: 8px; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-err { color: var(--red); }
+
+.pipeline-summary {
+  display: none; margin-top: 20px; animation: fadeIn .5s ease;
+}
+.pipeline-summary.show { display: block; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+@media(max-width:700px){ .summary-grid { grid-template-columns: repeat(2,1fr); } }
+.summary-stat {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px; text-align: center;
+}
+.summary-stat .val { font-size: 26px; font-weight: 700; color: var(--cyan); }
+.summary-stat .lbl { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* ========================================================
+   SECTION 2: CONSENT WIZARD
+   ======================================================== */
+.wizard-progress { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
+.wizard-step-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--bg2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--text3);
+  transition: all .3s; flex-shrink: 0;
+}
+.wizard-step-dot.current { border-color: var(--cyan); color: var(--cyan); background: rgba(6,182,212,0.1); }
+.wizard-step-dot.done { border-color: var(--green); background: var(--green); color: #0a0e1a; }
+.wizard-step-line { flex: 1; height: 2px; background: var(--border); transition: background .3s; }
+.wizard-step-line.done { background: var(--green); }
+.wizard-step-label { font-size: 11px; color: var(--text3); margin-top: 6px; text-align: center; }
+
+.wizard-body { max-width: 680px; margin: 0 auto; }
+.wizard-pane { display: none; animation: fadeIn .3s ease; }
+.wizard-pane.active { display: block; }
+.wizard-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.wizard-sub { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.role-card {
+  border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 16px; cursor: pointer; transition: all .2s; background: var(--bg2);
+}
+.role-card:hover { border-color: var(--text3); }
+.role-card.selected { border-color: var(--cyan); background: rgba(6,182,212,0.07); }
+.role-card .role-icon { font-size: 28px; margin-bottom: 8px; }
+.role-card .role-name { font-weight: 600; font-size: 14px; }
+.role-card .role-desc { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.juri-card {
+  border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 14px; cursor: pointer; transition: all .2s;
+  display: flex; align-items: flex-start; gap: 12px; background: var(--bg2);
+  margin-bottom: 10px;
+}
+.juri-card:hover { border-color: var(--text3); }
+.juri-card.selected { border-color: var(--cyan); background: rgba(6,182,212,0.07); }
+.juri-check {
+  width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+  border: 2px solid var(--border); background: var(--bg3);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 1px;
+  transition: all .2s;
+}
+.juri-card.selected .juri-check { background: var(--cyan); border-color: var(--cyan); color: #0a0e1a; font-weight: 700; }
+.scope-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 8px; background: var(--bg2); transition: all .2s;
+}
+.scope-row.enabled { border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.04); }
+.scope-name { font-size: 13px; font-weight: 600; }
+.scope-ret { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.toggle-btn {
+  position: relative; width: 40px; height: 22px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 11px; cursor: pointer; transition: all .25s; flex-shrink: 0;
+}
+.toggle-btn.on { background: var(--cyan); border-color: var(--cyan); }
+.toggle-btn::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--text3); transition: all .25s;
+}
+.toggle-btn.on::after { left: 20px; background: #0a0e1a; }
+.receipt-box {
+  background: var(--bg3); border: 1px solid rgba(6,182,212,0.3);
+  border-radius: var(--radius); padding: 18px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8;
+}
+.receipt-key { color: var(--text3); }
+.receipt-val { color: var(--cyan); }
+.wizard-nav { display: flex; justify-content: space-between; margin-top: 24px; }
+.consent-success { text-align: center; padding: 40px 20px; animation: fadeIn .5s ease; }
+.consent-check { font-size: 60px; margin-bottom: 16px; }
+.consent-id { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); margin-top: 8px; }
+
+/* ========================================================
+   SECTION 3: RISK SCORER
+   ======================================================== */
+.scorer-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
+@media(max-width:900px){ .scorer-layout{grid-template-columns:1fr;} }
+.gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+.gauge-canvas-wrap { position: relative; width: 280px; height: 160px; margin: 0 auto; }
+#gaugeChart { width: 100% !important; height: 100% !important; }
+.gauge-score-display {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  text-align: center;
+}
+.gauge-score-num { font-size: 48px; font-weight: 800; line-height: 1; transition: color .4s; }
+.gauge-score-max { font-size: 14px; color: var(--text2); }
+.priority-badge-large {
+  display: inline-block; padding: 6px 20px; border-radius: 100px;
+  font-size: 16px; font-weight: 700; margin-top: 12px;
+  transition: all .4s;
+}
+.slider-group { margin-bottom: 18px; }
+.slider-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+.slider-label .lbl { font-weight: 500; }
+.slider-label .val { font-weight: 700; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+input[type=range] {
+  width: 100%; height: 6px; appearance: none; background: var(--border);
+  border-radius: 3px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--cyan); border: 2px solid var(--bg);
+  box-shadow: 0 0 8px rgba(6,182,212,0.5); cursor: pointer;
+}
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--bg3); border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.toggle-row .lbl { font-size: 13px; font-weight: 500; }
+.toggle-row .desc { font-size: 11px; color: var(--text2); }
+.formula-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px; margin-top: 16px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8;
+}
+.formula-line { display: flex; justify-content: space-between; }
+.formula-total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; font-weight: 700; }
+.formula-part { color: var(--text2); }
+.formula-num { color: var(--cyan); }
+
+/* ========================================================
+   SECTION 4: MITRE ATT&CK
+   ======================================================== */
+.tactic-grid { display: grid; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.tactic-col { min-width: 130px; }
+.tactic-header {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 8px 10px; font-size: 11px; font-weight: 700;
+  color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--cyan); text-align: center;
+}
+.tactic-body {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 8px; min-height: 80px;
+}
+.technique-card {
+  border-radius: 6px; padding: 8px 10px; margin-bottom: 6px;
+  cursor: pointer; transition: all .2s; border: 1px solid;
+  font-size: 11px;
+}
+.technique-card:hover { transform: translateY(-1px); }
+.technique-card.p0 { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+.technique-card.p1 { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.3); }
+.technique-card.p2 { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+.technique-card .tc-id { font-family:'JetBrains Mono',monospace; color:var(--text3); font-size:10px; }
+.technique-card .tc-name { font-weight:600; color:var(--text); margin-top:2px; line-height:1.3; }
+.technique-card .tc-conf { color:var(--text2); font-size:10px; margin-top:4px; }
+.technique-modal {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.technique-modal-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; max-width: 480px; width: 90%;
+  animation: fadeIn .2s ease;
+}
+.chain-viz {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 12px; padding: 14px; background: var(--bg3);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.chain-node {
+  background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3);
+  border-radius: 6px; padding: 5px 10px; font-size: 11px;
+  font-family: 'JetBrains Mono', monospace; color: var(--cyan);
+}
+.chain-arrow { color: var(--text3); font-size: 14px; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; font-family: inherit;
+}
+.filter-btn:hover { border-color: var(--text3); color: var(--text); }
+.filter-btn.active { background: rgba(6,182,212,0.15); border-color: var(--cyan); color: var(--cyan); }
+
+/* ========================================================
+   SECTION 5: REMEDIATION
+   ======================================================== */
+.finding-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  transition: border-color .2s;
+}
+.finding-card:hover { border-color: var(--text3); }
+.finding-header { display: flex; align-items: flex-start; gap: 12px; }
+.finding-meta { flex: 1; }
+.finding-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.finding-cve { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text2); }
+.finding-plain { font-size:13px; color:var(--text2); margin-top:8px; line-height:1.6; }
+.finding-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.playbook-panel {
+  display: none; margin-top: 14px; animation: fadeIn .3s ease;
+}
+.playbook-panel.open { display: block; }
+.playbook-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.playbook-step:last-child { border-bottom: none; }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: var(--bg3); border: 1px solid var(--border);
+  font-size: 10px; font-weight: 700; display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace; color:var(--text3); transition:all .3s;
+}
+.step-num.done { background:var(--green); border-color:var(--green); color:#0a0e1a; }
+.step-cmd { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); word-break:break-all; }
+.step-desc { font-size:12px; color:var(--text2); }
+.consent-modal-overlay {
+  position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.8);
+  display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;
+}
+.consent-modal-box {
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;max-width:400px;width:90%;animation:fadeIn .2s ease;
+}
+.consent-modal-box input {
+  width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;
+  outline:none;margin-top:12px;transition:border-color .2s;
+}
+.consent-modal-box input:focus { border-color:var(--cyan); }
+
+/* ========================================================
+   SECTION 6: LIVE FEED
+   ======================================================== */
+.feed-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+.feed-controls { display:flex;gap:8px;align-items:center; }
+.feed-list { display:flex;flex-direction:column;gap:6px; }
+.feed-entry {
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  animation:slide-right .3s ease; transition:all .5s;
+  font-size:13px;
+}
+.feed-entry.fading { opacity:0.3; transform:scale(0.98); }
+.feed-entry.critical { animation:flash-red 1s ease 3; border-color:rgba(239,68,68,0.5); }
+.feed-time { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);flex-shrink:0; }
+.severity-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.severity-dot.critical,.severity-dot.high { background:var(--red); animation:pulse-red 1.5s infinite; }
+.severity-dot.medium { background:var(--yellow); }
+.severity-dot.low { background:var(--green); }
+@keyframes pulse-red {
+  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4);}
+  50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}
+}
+.feed-event-type { font-weight:700;min-width:120px;color:var(--text); }
+.feed-asset { color:var(--text2);flex:1; }
+.feed-technique { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--purple);flex-shrink:0; }
+.anomaly-bar-wrap { width:80px;flex-shrink:0; }
+.anomaly-bar { height:4px;border-radius:2px;background:var(--border);overflow:hidden; }
+.anomaly-fill { height:100%;border-radius:2px;transition:width .3s; }
+.anomaly-val { font-size:10px;color:var(--text3);margin-top:2px;text-align:right;font-family:'JetBrains Mono',monospace; }
+.alert-banner {
+  display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);
+  border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;
+  font-size:13px;color:var(--red);animation:fadeIn .3s ease;
+  display:flex;align-items:center;gap:8px;
+}
+.alert-banner.hidden { display:none!important; }
+.feed-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px; }
+@media(max-width:600px){.feed-stats{grid-template-columns:1fr 1fr;}}
+.feed-stat { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center; }
+.feed-stat .val { font-size:22px;font-weight:700;color:var(--cyan); }
+.feed-stat .lbl { font-size:11px;color:var(--text2);margin-top:2px; }
+
+/* ===== FOOTER ===== */
+footer {
+  text-align:center;padding:28px 24px;border-top:1px solid var(--border);
+  color:var(--text3);font-size:13px;margin-top:40px;
+}
+footer span { color:var(--cyan); }
+
+/* ===== MISC HELPERS ===== */
+.spin { animation: spin .8s linear infinite; display:inline-block; }
+</style>
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<nav id="navbar">
+  <div class="nav-logo">🛡️ defriends</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('pipeline')">🔄 Pipeline</button>
+    <button class="nav-tab" onclick="showSection('consent')">🔐 Consent Wizard</button>
+    <button class="nav-tab" onclick="showSection('scorer')">📊 Risk Scorer</button>
+    <button class="nav-tab" onclick="showSection('mitre')">🗺️ MITRE ATT&CK</button>
+    <button class="nav-tab" onclick="showSection('remediation')">🛠️ Remediation</button>
+    <button class="nav-tab" onclick="showSection('feed')">📡 Live Feed</button>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>Live</span>
+  </div>
+</nav>
+
+<div id="main">
+
+<!-- ================================================================
+     SECTION 1: PIPELINE
+     ================================================================ -->
+<section id="sec-pipeline" class="section active">
+  <div class="section-title">8-Layer Security Pipeline</div>
+  <div class="section-sub">Consent-first evidence processing — from raw signal to prioritised finding</div>
+
+  <div class="card" style="padding:24px;">
+    <div class="pipeline-stages" id="pipelineStages">
+      <!-- Stages injected by JS -->
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-primary" id="pipelineRunBtn" onclick="runPipeline()">
+        ▶ Run Demo Pipeline
+      </button>
+      <button class="btn btn-ghost" onclick="resetPipeline()">↺ Reset</button>
+      <span id="pipelineStatus" class="text-sm text-muted" style="margin-left:8px;"></span>
+    </div>
+
+    <div class="pipeline-log" id="pipelineLog">
+      <div style="color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;">
+        › Click "Run Demo Pipeline" to simulate an evidence event flowing through all 8 layers...
+      </div>
+    </div>
+
+    <div class="pipeline-summary" id="pipelineSummary">
+      <div class="flex-between">
+        <div style="font-size:16px;font-weight:700;">📋 Pipeline Run Complete</div>
+        <div class="badge badge-p0">P0 Critical</div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <div class="val">96.4</div>
+          <div class="lbl">Risk Score</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" style="color:var(--green);">8/8</div>
+          <div class="lbl">Layers Passed</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" style="color:var(--yellow);">1</div>
+          <div class="lbl">Finding Emitted</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" style="color:var(--purple);">T1190</div>
+          <div class="lbl">Top Technique</div>
+        </div>
+      </div>
+      <div class="card-sm mt-4" style="background:var(--bg3);border:1px solid rgba(34,201,151,0.3);">
+        <div class="text-sm text-green" style="font-weight:600;">✓ Full audit trail preserved · Consent receipt crcpt-7f3a9b2e validated · PII redacted · Report ready</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2 mt-4">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--cyan);">Pipeline Architecture</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9;">
+        Every security event must carry a valid <span class="mono text-cyan">consent_receipt_id</span> to pass Layer 4 ingestion.<br>
+        PII is redacted at Layer 2 before any storage occurs.<br>
+        HMAC signing at Layer 0 ensures tamper-evident audit trails.<br>
+        The scoring formula at Layer 7 produces deterministic P0–P3 priorities.
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--cyan);">Current Run Stats</div>
+      <div style="font-size:12px;line-height:2;">
+        <div class="flex-between"><span class="text-muted">Asset</span><span class="mono">payments-api v2.7.3</span></div>
+        <div class="flex-between"><span class="text-muted">Environment</span><span class="mono text-yellow">prod</span></div>
+        <div class="flex-between"><span class="text-muted">Org</span><span class="mono">demo-org</span></div>
+        <div class="flex-between"><span class="text-muted">Report ID</span><span class="mono text-cyan">rep_demo_0001</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 2: CONSENT WIZARD
+     ================================================================ -->
+<section id="sec-consent" class="section">
+  <div class="section-title">Consent Grant Wizard</div>
+  <div class="section-sub">GDPR · CCPA · HIPAA compliant consent receipts with hash-chain provenance</div>
+
+  <!-- Progress bar -->
+  <div style="max-width:680px;margin:0 auto 24px;">
+    <div class="wizard-progress" id="wizardProgress">
+      <div class="wizard-step-dot current" id="wdot-1">1</div>
+      <div class="wizard-step-line" id="wline-1"></div>
+      <div class="wizard-step-dot" id="wdot-2">2</div>
+      <div class="wizard-step-line" id="wline-2"></div>
+      <div class="wizard-step-dot" id="wdot-3">3</div>
+      <div class="wizard-step-line" id="wline-3"></div>
+      <div class="wizard-step-dot" id="wdot-4">4</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;">
+      <span class="wizard-step-label">Identity</span>
+      <span class="wizard-step-label">Jurisdiction</span>
+      <span class="wizard-step-label">Data Scopes</span>
+      <span class="wizard-step-label">Review &amp; Sign</span>
+    </div>
+  </div>
+
+  <div class="wizard-body">
+    <!-- Step 1 -->
+    <div class="wizard-pane active" id="wpane-1">
+      <div class="wizard-title">Who are you? 👤</div>
+      <div class="wizard-sub">Select your role to pre-configure appropriate consent scopes.</div>
+      <div class="role-grid">
+        <div class="role-card" onclick="selectRole(this,'Developer')">
+          <div class="role-icon">💻</div>
+          <div class="role-name">Developer</div>
+          <div class="role-desc">Application & service development teams</div>
+        </div>
+        <div class="role-card" onclick="selectRole(this,'Security Team')">
+          <div class="role-icon">🔐</div>
+          <div class="role-name">Security Team</div>
+          <div class="role-desc">SOC analysts, red/blue team, threat intel</div>
+        </div>
+        <div class="role-card" onclick="selectRole(this,'IT Admin')">
+          <div class="role-icon">⚙️</div>
+          <div class="role-name">IT Admin</div>
+          <div class="role-desc">Infrastructure and systems administration</div>
+        </div>
+        <div class="role-card" onclick="selectRole(this,'Compliance Officer')">
+          <div class="role-icon">📋</div>
+          <div class="role-name">Compliance Officer</div>
+          <div class="role-desc">Regulatory, audit, and policy oversight</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <div></div>
+        <button class="btn btn-primary" onclick="wizardNext()" id="w1-next" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="wizard-pane" id="wpane-2">
+      <div class="wizard-title">What's your jurisdiction? 🌍</div>
+      <div class="wizard-sub">Select all applicable regulations. Consent receipts will include the required fields.</div>
+
+      <div class="juri-card selected" onclick="toggleJuri(this,'GDPR')">
+        <div class="juri-check">✓</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">GDPR</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">EU General Data Protection Regulation — requires explicit consent, right to erasure, data minimisation, 72-hour breach notification.</div>
+        </div>
+      </div>
+      <div class="juri-card" onclick="toggleJuri(this,'CCPA')">
+        <div class="juri-check"></div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">CCPA</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">California Consumer Privacy Act — opt-out rights, "Do Not Sell My Data", annual disclosure requirements.</div>
+        </div>
+      </div>
+      <div class="juri-card" onclick="toggleJuri(this,'HIPAA')">
+        <div class="juri-check"></div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">HIPAA</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">US Health Insurance Portability and Accountability Act — PHI protection, BAA requirements, audit controls.</div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost" onclick="wizardPrev()">← Back</button>
+        <button class="btn btn-primary" onclick="wizardNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="wizard-pane" id="wpane-3">
+      <div class="wizard-title">Data Scopes &amp; Retention 📁</div>
+      <div class="wizard-sub">Enable the telemetry scopes required for your security programme.</div>
+
+      <div id="scopesContainer">
+        <!-- injected by JS -->
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost" onclick="wizardPrev()">← Back</button>
+        <button class="btn btn-primary" onclick="wizardNext()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="wizard-pane" id="wpane-4">
+      <div id="consentReviewPane">
+        <div class="wizard-title">Review &amp; Sign ✍️</div>
+        <div class="wizard-sub">Verify the consent receipt below before granting.</div>
+        <div class="receipt-box" id="receiptBox">
+          <!-- injected by JS -->
+        </div>
+        <div class="wizard-nav">
+          <button class="btn btn-ghost" onclick="wizardPrev()">← Back</button>
+          <button class="btn btn-success" onclick="grantConsent()" style="gap:8px;">
+            🔏 Grant Consent
+          </button>
+        </div>
+      </div>
+      <div id="consentSuccess" style="display:none;">
+        <div class="consent-success">
+          <div class="consent-check">✅</div>
+          <div style="font-size:22px;font-weight:700;">Consent Granted</div>
+          <div class="text-muted text-sm mt-2">Your consent receipt has been signed and stored with a tamper-evident hash chain.</div>
+          <div class="consent-id" id="consentReceiptId">crcpt-xxxxxxxxxxxxxxxx</div>
+          <div class="mt-4" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="wizardReset()">↺ New Consent Request</button>
+            <button class="btn btn-ghost" onclick="showSection('remediation')">View Remediation →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 3: RISK SCORER
+     ================================================================ -->
+<section id="sec-scorer" class="section">
+  <div class="section-title">Interactive Risk Scorer</div>
+  <div class="section-sub">Real-time P0–P3 priority calculation using CVSS · EPSS · KEV · Reachability</div>
+
+  <div class="scorer-layout">
+    <!-- Inputs -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:20px;color:var(--cyan);">Risk Factors</div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="lbl">CVSS Score</span>
+          <span class="val" id="cvssVal">9.8</span>
+        </div>
+        <input type="range" id="cvssSlider" min="0" max="10" step="0.1" value="9.8" oninput="updateScore()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="lbl">EPSS Probability</span>
+          <span class="val" id="epssVal">72%</span>
+        </div>
+        <input type="range" id="epssSlider" min="0" max="100" step="1" value="72" oninput="updateScore()">
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">KEV Listed</div>
+          <div class="desc">In CISA Known Exploited Vulnerabilities catalogue</div>
+        </div>
+        <div class="toggle-btn on" id="kevToggle" onclick="toggleFactor('kev')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Code Reachable</div>
+          <div class="desc">Vulnerable code path is reachable at runtime</div>
+        </div>
+        <div class="toggle-btn on" id="reachToggle" onclick="toggleFactor('reach')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="lbl">Internet Facing</div>
+          <div class="desc">Service is exposed to the public internet</div>
+        </div>
+        <div class="toggle-btn on" id="internetToggle" onclick="toggleFactor('internet')"></div>
+      </div>
+
+      <div class="formula-box">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">SCORE BREAKDOWN</div>
+        <div class="formula-line"><span class="formula-part">CVSS × 55/10</span><span class="formula-num" id="fb-cvss">53.9</span></div>
+        <div class="formula-line"><span class="formula-part">EPSS × 25</span><span class="formula-num" id="fb-epss">18.0</span></div>
+        <div class="formula-line"><span class="formula-part">KEV × 10</span><span class="formula-num" id="fb-kev">10.0</span></div>
+        <div class="formula-line"><span class="formula-part">Reachable × 7</span><span class="formula-num" id="fb-reach">7.0</span></div>
+        <div class="formula-line"><span class="formula-part">Internet × 3</span><span class="formula-num" id="fb-internet">3.0</span></div>
+        <div class="formula-line formula-total"><span>Total Score</span><span class="formula-num" id="fb-total">96.4</span></div>
+      </div>
+    </div>
+
+    <!-- Gauge -->
+    <div class="card gauge-wrap">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--cyan);text-align:center;">Risk Score</div>
+      <div class="gauge-canvas-wrap">
+        <canvas id="gaugeChart"></canvas>
+        <div class="gauge-score-display">
+          <div class="gauge-score-num" id="gaugeNum" style="color:var(--red);">96</div>
+          <div class="gauge-score-max">/100</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:8px;">
+        <div class="priority-badge-large badge-p0" id="priorityBadge">P0 Critical</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2);">Priority Thresholds</div>
+      <div style="font-size:12px;line-height:2.2;">
+        <div class="flex-between"><span class="badge badge-p0">P0 Critical</span><span class="mono text-muted">≥ 85</span></div>
+        <div class="flex-between"><span class="badge badge-p1">P1 High</span><span class="mono text-muted">≥ 70</span></div>
+        <div class="flex-between"><span class="badge badge-p2">P2 Medium</span><span class="mono text-muted">≥ 50</span></div>
+        <div class="flex-between"><span class="badge badge-p3">P3 Low</span><span class="mono text-muted">&lt; 50</span></div>
+      </div>
+
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--text3);text-align:center;line-height:1.6;">
+        Presets:
+        <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;margin-top:6px;" onclick="loadPreset('cve12345')">CVE-2025-12345</button>
+        <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;margin-top:4px;" onclick="loadPreset('cve22222')">CVE-2025-22222</button>
+        <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;margin-top:4px;" onclick="loadPreset('cve99999')">CVE-2024-99999</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 4: MITRE ATT&CK
+     ================================================================ -->
+<section id="sec-mitre" class="section">
+  <div class="section-title">MITRE ATT&CK Map</div>
+  <div class="section-sub">CWE → technique mapping via YAML rule engine · Click any card to expand</div>
+
+  <div class="filter-row">
+    <span class="text-sm text-muted" style="line-height:28px;">Filter:</span>
+    <button class="filter-btn active" onclick="setMitreFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setMitreFilter('P0',this)">P0 Critical</button>
+    <button class="filter-btn" onclick="setMitreFilter('P1',this)">P1 High</button>
+    <button class="filter-btn" onclick="setMitreFilter('P2',this)">P2 Medium</button>
+  </div>
+
+  <div style="overflow-x:auto;padding-bottom:12px;">
+    <div id="mitreGrid" style="display:grid;gap:12px;min-width:900px;">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--cyan);">⛓️ Attacker Technique Chain (CVE-2025-12345)</div>
+    <div class="text-sm text-muted mb-3">How an attacker could chain these techniques for the deserialization exploit:</div>
+    <div class="chain-viz">
+      <div class="chain-node">T1190<br><span style="color:var(--text2);font-size:9px;">Initial Access</span></div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-node">T1059<br><span style="color:var(--text2);font-size:9px;">Execution</span></div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-node">T1562<br><span style="color:var(--text2);font-size:9px;">Def. Evasion</span></div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-node">T1078<br><span style="color:var(--text2);font-size:9px;">Valid Accounts</span></div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-node">T1041<br><span style="color:var(--text2);font-size:9px;">Exfiltration</span></div>
+    </div>
+    <div class="mt-3 text-sm text-muted">
+      Exploit public-facing deserialization → drop reverse shell → disable security tools → pivot using stolen credentials → exfiltrate payment records.
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 5: REMEDIATION
+     ================================================================ -->
+<section id="sec-remediation" class="section">
+  <div class="section-title">Remediation Playbooks</div>
+  <div class="section-sub">Dry-run step-by-step fixes with consent-gated apply — sorted P0 → P1 → P2</div>
+
+  <div id="remediationCards">
+    <!-- Injected by JS -->
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 6: LIVE FEED
+     ================================================================ -->
+<section id="sec-feed" class="section">
+  <div class="section-title">Live Behavioral Event Feed</div>
+  <div class="section-sub">UEBA anomaly signals mapped to MITRE ATT&CK in real-time</div>
+
+  <div class="feed-stats">
+    <div class="feed-stat">
+      <div class="val" id="feedTotal">0</div>
+      <div class="lbl">Events / Session</div>
+    </div>
+    <div class="feed-stat">
+      <div class="val text-red" id="feedCritical">0</div>
+      <div class="lbl">Critical Anomalies</div>
+    </div>
+    <div class="feed-stat">
+      <div class="val text-yellow" id="feedAssets">0</div>
+      <div class="lbl">Assets Monitored</div>
+    </div>
+    <div class="feed-stat">
+      <div class="val text-green" id="feedAvgScore">—</div>
+      <div class="lbl">Avg Anomaly Score</div>
+    </div>
+  </div>
+
+  <div class="feed-header">
+    <div style="font-size:13px;font-weight:700;color:var(--text2);">EVENT STREAM</div>
+    <div class="feed-controls">
+      <button class="btn btn-secondary" id="feedToggleBtn" onclick="toggleFeed()">⏸ Pause Feed</button>
+      <button class="btn btn-ghost" onclick="clearFeed()">🗑 Clear</button>
+    </div>
+  </div>
+
+  <div class="alert-banner hidden" id="alertBanner">
+    🚨 <strong>High-severity anomaly detected!</strong> <span id="alertDetail"></span>
+  </div>
+
+  <div class="feed-list" id="feedList">
+    <!-- Injected by JS -->
+  </div>
+</section>
+
+</div><!-- #main -->
+
+<!-- Technique detail modal -->
+<div class="technique-modal" id="techniqueModal" style="display:none;" onclick="closeTechniqueModal(event)">
+  <div class="technique-modal-box" id="techniqueModalBox">
+    <!-- Injected by JS -->
+  </div>
+</div>
+
+<!-- Consent-gate modal -->
+<div class="consent-modal-overlay" id="consentGateModal" style="display:none;">
+  <div class="consent-modal-box">
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">🔐 Consent Required</div>
+    <div class="text-sm text-muted">Applying fixes requires a valid consent receipt. Paste your receipt ID below.</div>
+    <input type="text" id="consentGateInput" placeholder="crcpt-xxxxxxxxxxxxxxxx" class="mono" />
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeConsentGate()">Cancel</button>
+      <button class="btn btn-primary" onclick="verifyConsentGate()">Verify &amp; Apply</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong><span>defriends</span></strong> — Consent-First Defensive Security Platform &nbsp;·&nbsp;
+  GDPR · CCPA · HIPAA &nbsp;·&nbsp; All data simulated for demo purposes
+</footer>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+const state = {
+  wizard: { step: 1, role: null, jurisdictions: new Set(['GDPR']), scopes: {} },
+  scorer: { cvss: 9.8, epss: 0.72, kev: true, reach: true, internet: true },
+  mitre: { filter: 'all' },
+  feed: { running: true, total: 0, critical: 0, scoreSum: 0, assets: new Set() },
+  pipeline: { running: false },
+  gaugeChart: null,
+};
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const names = ['pipeline','consent','scorer','mitre','remediation','feed'];
+  tabs[names.indexOf(id)]?.classList.add('active');
+
+  if (id === 'scorer' && !state.gaugeChart) initGauge();
+  if (id === 'mitre') renderMitreGrid();
+  if (id === 'remediation') renderRemediation();
+}
+
+// ================================================================
+// SECTION 1: PIPELINE
+// ================================================================
+const PIPELINE_STAGES = [
+  { icon:'🔒', label:'Security Core', detail:'HMAC signing, rate limiting, CSP/HSTS, secret redaction, SSRF guards' },
+  { icon:'📜', label:'Consent', detail:'GDPR/CCPA/HIPAA — captures, stores, revokes, audits consent receipts' },
+  { icon:'📥', label:'Collectors', detail:'Cross-platform logs, AES-256-GCM at rest, PII redaction, 7-day auto-purge' },
+  { icon:'🧠', label:'Behavioral', detail:'UEBA baselines, MAD-robust anomaly scores, emits EvidenceEvents' },
+  { icon:'🔍', label:'Ingestion', detail:'Validates EvidenceEvent, refuses without valid consent_receipt_id' },
+  { icon:'⚙️', label:'Normalizer', detail:'Deduplicates and standardises CWE/CVE fields' },
+  { icon:'🗺️', label:'Mapping', detail:'YAML rule engine maps CWEs to MITRE ATT&CK techniques' },
+  { icon:'📊', label:'Scoring', detail:'score = CVSS×55 + EPSS×25 + KEV×10 + Reachable×7 + Internet×3' },
+  { icon:'📋', label:'Reporting', detail:'PDF/JSON reports, dry-run playbooks, plain-language walkthroughs' },
+];
+
+const PIPELINE_LOG_MSGS = [
+  { delay:350,  cls:'log-ok',   text:'Layer 0: HMAC-SHA256 signature verified · Request rate: 0.3 req/s (OK)' },
+  { delay:700,  cls:'log-ok',   text:'Layer 0: Secret scan passed · 0 credentials detected in payload' },
+  { delay:1050, cls:'log-ok',   text:'Layer 1: Consent receipt crcpt-7f3a9b2e resolved · Scope: system_logs, auth_logs' },
+  { delay:1400, cls:'log-ok',   text:'Layer 1: GDPR jurisdiction confirmed · Retention window: 7 days' },
+  { delay:1750, cls:'log-ok',   text:'Layer 2: AES-256-GCM encryption applied · PII tokens redacted: 3 fields' },
+  { delay:2100, cls:'log-warn', text:'Layer 3: UEBA anomaly detected · auth_failure spike on host-042 (score: 87.4)' },
+  { delay:2450, cls:'log-ok',   text:'Layer 3: EvidenceEvent emitted · event_id: evt-9f2c1b3a' },
+  { delay:2800, cls:'log-ok',   text:'Layer 4: EvidenceEvent schema validation passed · consent_receipt_id present' },
+  { delay:3150, cls:'log-ok',   text:'Layer 5: Dedup check — new finding · CWE-502 normalised from raw scanner output' },
+  { delay:3500, cls:'log-ok',   text:'Layer 6: CWE-502 → T1190 (conf: 0.85) · T1059 (conf: 0.65) via YAML rule engine' },
+  { delay:3850, cls:'log-ok',   text:'Layer 7: CVSS=9.8 EPSS=0.72 KEV=true Reachable=true Internet=true' },
+  { delay:4200, cls:'log-ok',   text:'Layer 7: Score = 53.9 + 18.0 + 10.0 + 7.0 + 3.0 = 96.4 → P0 Critical' },
+  { delay:4550, cls:'log-ok',   text:'Layer 8: PDF report generated · rep_demo_0001.pdf (142 KB)' },
+  { delay:4900, cls:'log-ok',   text:'Layer 8: Dry-run playbook ready · 5 remediation steps for CVE-2025-12345' },
+  { delay:5200, cls:'log-ok',   text:'Pipeline complete · 1 P0 finding emitted · Full audit trail preserved ✓' },
+];
+
+function buildPipelineStages() {
+  const container = document.getElementById('pipelineStages');
+  container.innerHTML = '';
+  PIPELINE_STAGES.forEach((s, i) => {
+    if (i > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'pipeline-connector';
+      conn.id = `conn-${i}`;
+      conn.innerHTML = '<div class="connector-fill"></div>';
+      container.appendChild(conn);
+    }
+    const node = document.createElement('div');
+    node.className = 'stage-node';
+    node.id = `stage-${i}`;
+    node.innerHTML = `
+      <div class="stage-circle" title="${s.detail}">
+        ${s.icon}
+        <span class="layer-num">${i}</span>
+      </div>
+      <div class="stage-label">${s.label}</div>`;
+    container.appendChild(node);
+  });
+}
+
+function resetPipeline() {
+  if (state.pipeline.running) return;
+  document.querySelectorAll('.stage-node').forEach(n => n.className = 'stage-node');
+  document.querySelectorAll('.pipeline-connector').forEach(c => c.classList.remove('active'));
+  document.getElementById('pipelineLog').innerHTML =
+    `<div style="color:var(--text3);font-size:12px;font-family:'JetBrains Mono',monospace;">› Click "Run Demo Pipeline" to simulate an evidence event flowing through all 8 layers...</div>`;
+  document.getElementById('pipelineSummary').classList.remove('show');
+  document.getElementById('pipelineRunBtn').disabled = false;
+  document.getElementById('pipelineStatus').textContent = '';
+}
+
+async function runPipeline() {
+  if (state.pipeline.running) return;
+  state.pipeline.running = true;
+  document.getElementById('pipelineRunBtn').disabled = true;
+  document.getElementById('pipelineSummary').classList.remove('show');
+  document.getElementById('pipelineLog').innerHTML = '';
+
+  const timeNow = () => new Date().toISOString().slice(11,23);
+  const logEl = document.getElementById('pipelineLog');
+
+  function addLog(cls, text) {
+    const div = document.createElement('div');
+    div.className = `pipeline-log-entry`;
+    div.innerHTML = `<span class="log-time">${timeNow()}</span><span class="${cls}">✓ ${text}</span>`;
+    if (cls === 'log-warn') div.querySelector('span:last-child').textContent = '⚠ ' + text;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function activateStage(i) {
+    document.querySelectorAll('.stage-node').forEach((n,idx) => {
+      if (idx < i) { n.classList.remove('active'); n.classList.add('done'); }
+      else if (idx === i) { n.classList.add('active'); n.classList.remove('done'); }
+      else { n.classList.remove('active','done'); }
+    });
+    if (i > 0) {
+      for (let c = 1; c <= i; c++) {
+        const conn = document.getElementById(`conn-${c}`);
+        if (conn) conn.classList.add('active');
+      }
+    }
+    document.getElementById('pipelineStatus').textContent = `Processing Layer ${i}…`;
+  }
+
+  let stageIdx = 0;
+  for (const msg of PIPELINE_LOG_MSGS) {
+    await sleep(350);
+    const layerMatch = msg.text.match(/Layer (\d)/);
+    const layer = layerMatch ? parseInt(layerMatch[1]) : stageIdx;
+    if (layer !== stageIdx) { stageIdx = layer; activateStage(layer); }
+    addLog(msg.cls, msg.text);
+  }
+
+  // Mark all done
+  document.querySelectorAll('.stage-node').forEach(n => { n.classList.remove('active'); n.classList.add('done'); });
+  document.querySelectorAll('.pipeline-connector').forEach(c => c.classList.add('active'));
+  document.getElementById('pipelineStatus').textContent = 'Complete';
+  document.getElementById('pipelineSummary').classList.add('show');
+  state.pipeline.running = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ================================================================
+// SECTION 2: CONSENT WIZARD
+// ================================================================
+const SCOPES = [
+  { id:'system_logs',          label:'System Logs',            ret:'7 days',  desc:'OS-level events, process creation, file access' },
+  { id:'auth_logs',            label:'Authentication Logs',    ret:'30 days', desc:'Login attempts, MFA events, session tokens' },
+  { id:'network_metadata',     label:'Network Metadata',       ret:'7 days',  desc:'Connection flows, DNS queries (no payload)' },
+  { id:'behavioral_telemetry', label:'Behavioral Telemetry',   ret:'14 days', desc:'UEBA baselines, user activity patterns' },
+  { id:'vulnerability_scans',  label:'Vulnerability Scans',    ret:'90 days', desc:'SBOM, CVE findings, CVSS data' },
+  { id:'incident_events',      label:'Incident Events',        ret:'365 days',desc:'Confirmed security incidents and response actions' },
+];
+
+function buildScopesUI() {
+  const defaults = new Set(['system_logs','auth_logs','behavioral_telemetry']);
+  SCOPES.forEach(s => state.wizard.scopes[s.id] = defaults.has(s.id));
+  const el = document.getElementById('scopesContainer');
+  el.innerHTML = SCOPES.map(s => `
+    <div class="scope-row ${state.wizard.scopes[s.id] ? 'enabled' : ''}" id="scope-row-${s.id}">
+      <div>
+        <div class="scope-name">${s.label}</div>
+        <div class="scope-ret">Retention: <strong>${s.ret}</strong> &nbsp;·&nbsp; ${s.desc}</div>
+      </div>
+      <div class="toggle-btn ${state.wizard.scopes[s.id] ? 'on' : ''}" id="scope-toggle-${s.id}" onclick="toggleScope('${s.id}')"></div>
+    </div>`).join('');
+}
+
+function toggleScope(id) {
+  state.wizard.scopes[id] = !state.wizard.scopes[id];
+  document.getElementById(`scope-toggle-${id}`).classList.toggle('on', state.wizard.scopes[id]);
+  document.getElementById(`scope-row-${id}`).classList.toggle('enabled', state.wizard.scopes[id]);
+}
+
+function selectRole(el, role) {
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.wizard.role = role;
+  document.getElementById('w1-next').disabled = false;
+}
+
+function toggleJuri(el, name) {
+  if (state.wizard.jurisdictions.has(name)) {
+    state.wizard.jurisdictions.delete(name);
+    el.classList.remove('selected');
+    el.querySelector('.juri-check').textContent = '';
+  } else {
+    state.wizard.jurisdictions.add(name);
+    el.classList.add('selected');
+    el.querySelector('.juri-check').textContent = '✓';
+  }
+}
+
+function buildReceipt() {
+  // Use Web Crypto API for cryptographically secure random receipt IDs and hashes (demo — no backend)
+  const randBytes = crypto.getRandomValues(new Uint8Array(24));
+  const id = 'crcpt-' + Array.from(randBytes, b => b.toString(36).padStart(2,'0')).join('').slice(0,18);
+  const ts = new Date().toISOString();
+  const hashBytes = crypto.getRandomValues(new Uint8Array(16));
+  const hash = 'sha256:' + Array.from(hashBytes, b => b.toString(16).padStart(2,'0')).join('') +
+    ' /* simulated — production uses real SHA-256 over the receipt payload */';
+  const enabledScopes = Object.entries(state.wizard.scopes).filter(([,v])=>v).map(([k])=>k);
+  state.wizard.receiptId = id;
+  return `<span class="receipt-key">consent_receipt_id: </span><span class="receipt-val">${id}</span>
+<span class="receipt-key">issued_at:          </span><span class="receipt-val">${ts}</span>
+<span class="receipt-key">granted_by:         </span><span class="receipt-val">${state.wizard.role || 'Security Team'}</span>
+<span class="receipt-key">jurisdictions:      </span><span class="receipt-val">[${[...state.wizard.jurisdictions].join(', ')}]</span>
+<span class="receipt-key">scopes:             </span><span class="receipt-val">[${enabledScopes.join(', ')}]</span>
+<span class="receipt-key">retention_default:  </span><span class="receipt-val">7d (scope-specific overrides apply)</span>
+<span class="receipt-key">revocable:          </span><span class="receipt-val">true</span>
+<span class="receipt-key">hash_chain:         </span><span class="receipt-val">${hash}</span>
+<span class="receipt-key">signature_algo:     </span><span class="receipt-val">HMAC-SHA256</span>
+<span class="receipt-key">schema_version:     </span><span class="receipt-val">v1</span>`;
+}
+
+function wizardNext() {
+  const cur = state.wizard.step;
+  if (cur === 3) {
+    document.getElementById('receiptBox').innerHTML = buildReceipt();
+  }
+  goToWizardStep(cur + 1);
+}
+function wizardPrev() { goToWizardStep(state.wizard.step - 1); }
+
+function goToWizardStep(n) {
+  document.querySelectorAll('.wizard-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`wpane-${n}`).classList.add('active');
+  state.wizard.step = n;
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById(`wdot-${i}`);
+    dot.classList.remove('current','done');
+    if (i < n) dot.classList.add('done'), dot.textContent = '✓';
+    else if (i === n) dot.classList.add('current'), dot.textContent = i;
+    else dot.textContent = i;
+  }
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById(`wline-${i}`).classList.toggle('done', i < n);
+  }
+}
+
+function grantConsent() {
+  document.getElementById('consentReviewPane').style.display = 'none';
+  document.getElementById('consentSuccess').style.display = 'block';
+  document.getElementById('consentReceiptId').textContent = state.wizard.receiptId;
+}
+
+function wizardReset() {
+  state.wizard = { step: 1, role: null, jurisdictions: new Set(['GDPR']), scopes: {} };
+  document.getElementById('consentReviewPane').style.display = '';
+  document.getElementById('consentSuccess').style.display = 'none';
+  buildScopesUI();
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.juri-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.juri-check').textContent = '';
+  });
+  document.querySelector('.juri-card').classList.add('selected');
+  document.querySelector('.juri-card .juri-check').textContent = '✓';
+  document.getElementById('w1-next').disabled = true;
+  goToWizardStep(1);
+}
+
+// ================================================================
+// SECTION 3: RISK SCORER
+// ================================================================
+function computeScore() {
+  const { cvss, epss, kev, reach, internet } = state.scorer;
+  const parts = {
+    cvss:    parseFloat(((cvss/10) * 55).toFixed(1)),
+    epss:    parseFloat((epss * 25).toFixed(1)),
+    kev:     kev ? 10 : 0,
+    reach:   reach ? 7 : 0,
+    internet:internet ? 3 : 0,
+  };
+  const total = Math.min(100, parseFloat((parts.cvss + parts.epss + parts.kev + parts.reach + parts.internet).toFixed(1)));
+  return { parts, total };
+}
+
+function getPriority(score) {
+  if (score >= 85) return { label:'P0 Critical', cls:'badge-p0', color: '#ef4444' };
+  if (score >= 70) return { label:'P1 High',     cls:'badge-p1', color: '#f97316' };
+  if (score >= 50) return { label:'P2 Medium',   cls:'badge-p2', color: '#f59e0b' };
+  return               { label:'P3 Low',      cls:'badge-p3', color: '#22c997' };
+}
+
+function gaugeColor(score) {
+  if (score >= 85) return '#ef4444';
+  if (score >= 70) return '#f97316';
+  if (score >= 50) return '#f59e0b';
+  return '#22c997';
+}
+
+function initGauge() {
+  const ctx = document.getElementById('gaugeChart').getContext('2d');
+  state.gaugeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [96.4, 3.6],
+        backgroundColor: ['#ef4444', '#1e2d4a'],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '75%', animation: { duration: 600, easing: 'easeInOutQuart' },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    }
+  });
+  updateScore();
+}
+
+function updateScore() {
+  const cvss = parseFloat(document.getElementById('cvssSlider').value);
+  const epss = parseFloat(document.getElementById('epssSlider').value) / 100;
+  state.scorer.cvss = cvss;
+  state.scorer.epss = epss;
+
+  document.getElementById('cvssVal').textContent = cvss.toFixed(1);
+  document.getElementById('epssVal').textContent = Math.round(epss * 100) + '%';
+
+  const { parts, total } = computeScore();
+  const prio = getPriority(total);
+  const color = gaugeColor(total);
+
+  document.getElementById('fb-cvss').textContent = parts.cvss;
+  document.getElementById('fb-epss').textContent = parts.epss;
+  document.getElementById('fb-kev').textContent = parts.kev;
+  document.getElementById('fb-reach').textContent = parts.reach;
+  document.getElementById('fb-internet').textContent = parts.internet;
+  document.getElementById('fb-total').textContent = total;
+
+  document.getElementById('gaugeNum').textContent = Math.round(total);
+  document.getElementById('gaugeNum').style.color = color;
+
+  const badge = document.getElementById('priorityBadge');
+  badge.textContent = prio.label;
+  badge.className = `priority-badge-large badge ${prio.cls}`;
+
+  if (state.gaugeChart) {
+    state.gaugeChart.data.datasets[0].data = [total, 100 - total];
+    state.gaugeChart.data.datasets[0].backgroundColor[0] = color;
+    state.gaugeChart.update();
+  }
+}
+
+function toggleFactor(f) {
+  state.scorer[f] = !state.scorer[f];
+  const ids = { kev:'kevToggle', reach:'reachToggle', internet:'internetToggle' };
+  document.getElementById(ids[f]).classList.toggle('on', state.scorer[f]);
+  updateScore();
+}
+
+function loadPreset(id) {
+  const presets = {
+    cve12345: { cvss:9.8, epss:72, kev:true,  reach:true,  internet:true  },
+    cve22222: { cvss:6.1, epss:21, kev:false, reach:true,  internet:false },
+    cve99999: { cvss:7.5, epss:38, kev:false, reach:true,  internet:false },
+  };
+  const p = presets[id];
+  document.getElementById('cvssSlider').value = p.cvss;
+  document.getElementById('epssSlider').value = p.epss;
+  state.scorer.kev = p.kev;
+  state.scorer.reach = p.reach;
+  state.scorer.internet = p.internet;
+  document.getElementById('kevToggle').classList.toggle('on', p.kev);
+  document.getElementById('reachToggle').classList.toggle('on', p.reach);
+  document.getElementById('internetToggle').classList.toggle('on', p.internet);
+  updateScore();
+}
+
+// ================================================================
+// SECTION 4: MITRE ATT&CK
+// ================================================================
+const TACTICS = [
+  'Initial Access','Execution','Persistence','Defense Evasion',
+  'Credential Access','Discovery','Lateral Movement','Exfiltration','Impact'
+];
+
+const MITRE_FINDINGS = [
+  {
+    priority:'P0', cve:'CVE-2025-12345', cwe:'CWE-502', cvss:9.8, conf:0.85,
+    title:'Unsafe Deserialization', tactic:'Initial Access',
+    tid:'T1190', tname:'Exploit Public-Facing Application',
+    rationale:'Reachable deserialization on internet-facing surface is primary Initial Access vector.',
+    score: 96.4,
+  },
+  {
+    priority:'P0', cve:'CVE-2025-12345', cwe:'CWE-502', cvss:9.8, conf:0.65,
+    title:'Unsafe Deserialization → RCE', tactic:'Execution',
+    tid:'T1059', tname:'Command and Scripting Interpreter',
+    rationale:'Successful deserialization exploit commonly leads to arbitrary code execution.',
+    score: 96.4,
+  },
+  {
+    priority:'P1', cve:'CVE-2025-22222', cwe:'CWE-79', cvss:6.1, conf:0.80,
+    title:'Reflected XSS', tactic:'Execution',
+    tid:'T1059.007', tname:'JavaScript',
+    rationale:'XSS enables client-side script execution in victim browser context.',
+    score: 73.2,
+  },
+  {
+    priority:'P1', cve:'CVE-2025-22222', cwe:'CWE-79', cvss:6.1, conf:0.75,
+    title:'Reflected XSS → Session Theft', tactic:'Credential Access',
+    tid:'T1539', tname:'Steal Web Session Cookie',
+    rationale:'XSS frequently used to steal session tokens and hijack authenticated sessions.',
+    score: 73.2,
+  },
+  {
+    priority:'P2', cve:'CVE-2024-99999', cwe:'CWE-89', cvss:7.5, conf:0.85,
+    title:'SQL Injection', tactic:'Initial Access',
+    tid:'T1190', tname:'Exploit Public-Facing Application',
+    rationale:'SQL injection allows bypassing authentication and accessing sensitive data.',
+    score: 56.6,
+  },
+  {
+    priority:'P2', cve:'CVE-2024-99999', cwe:'CWE-89', cvss:7.5, conf:0.70,
+    title:'SQL Injection → Credentials', tactic:'Credential Access',
+    tid:'T1555', tname:'Credentials from Password Stores',
+    rationale:'SQL injection can dump credential tables from the database.',
+    score: 56.6,
+  },
+  {
+    priority:'P0', cve:'CWE-693', cwe:'CWE-693', cvss:8.5, conf:0.95,
+    title:'Protection Mechanism Failure', tactic:'Defense Evasion',
+    tid:'T1562.004', tname:'Impair Defenses: Disable or Modify System Firewall',
+    rationale:'Protection mechanism failures allow adversaries to impair defensive controls.',
+    score: 88.0,
+  },
+];
+
+function renderMitreGrid() {
+  const grid = document.getElementById('mitreGrid');
+  const cols = TACTICS.length;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  const filter = state.mitre.filter;
+  grid.innerHTML = TACTICS.map(tactic => {
+    const findings = MITRE_FINDINGS.filter(f =>
+      f.tactic === tactic && (filter === 'all' || f.priority === filter)
+    );
+    return `
+      <div class="tactic-col">
+        <div class="tactic-header">${tactic}</div>
+        <div class="tactic-body">
+          ${findings.length ? findings.map((f,i) => `
+            <div class="technique-card ${f.priority.toLowerCase()}" onclick="showTechniqueModal(${MITRE_FINDINGS.indexOf(f)})">
+              <div class="tc-id">${f.tid}</div>
+              <div class="tc-name">${f.tname}</div>
+              <div class="tc-conf">conf: ${f.conf} · <span class="badge ${f.priority === 'P0' ? 'badge-p0' : f.priority === 'P1' ? 'badge-p1' : 'badge-p2'}" style="font-size:9px;">${f.priority}</span></div>
+            </div>`).join('') : '<div style="color:var(--text3);font-size:11px;padding:4px;">—</div>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setMitreFilter(f, btn) {
+  state.mitre.filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMitreGrid();
+}
+
+function showTechniqueModal(idx) {
+  const f = MITRE_FINDINGS[idx];
+  const box = document.getElementById('techniqueModalBox');
+  box.innerHTML = `
+    <div class="flex-between mb-3">
+      <div style="font-size:16px;font-weight:700;">${f.tname}</div>
+      <button class="btn btn-ghost" style="padding:4px 10px;" onclick="closeTechniqueModal()">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <span class="badge ${f.priority === 'P0' ? 'badge-p0' : f.priority === 'P1' ? 'badge-p1' : 'badge-p2'}">${f.priority}</span>
+      <span class="tag tag-cyan">${f.tid}</span>
+      <span class="tag tag-purple">${f.tactic}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;margin-bottom:14px;">
+      <div class="card-sm" style="background:var(--bg3);border:1px solid var(--border);">
+        <div class="text-dim">CVE</div><div class="mono text-cyan mt-2">${f.cve}</div>
+      </div>
+      <div class="card-sm" style="background:var(--bg3);border:1px solid var(--border);">
+        <div class="text-dim">CWE</div><div class="mono text-cyan mt-2">${f.cwe}</div>
+      </div>
+      <div class="card-sm" style="background:var(--bg3);border:1px solid var(--border);">
+        <div class="text-dim">CVSS</div><div class="mono" style="color:var(--red);margin-top:4px;">${f.cvss}</div>
+      </div>
+      <div class="card-sm" style="background:var(--bg3);border:1px solid var(--border);">
+        <div class="text-dim">Confidence</div><div class="mono text-green mt-2">${Math.round(f.conf*100)}%</div>
+      </div>
+    </div>
+    <div class="text-sm text-muted" style="line-height:1.7;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+      ${f.rationale}
+    </div>
+    <div class="mt-3" style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="showSection('remediation');closeTechniqueModal()">View Remediation</button>
+      <button class="btn btn-ghost" onclick="closeTechniqueModal()">Close</button>
+    </div>`;
+  document.getElementById('techniqueModal').style.display = 'flex';
+}
+
+function closeTechniqueModal(e) {
+  if (!e || e.target.id === 'techniqueModal') {
+    document.getElementById('techniqueModal').style.display = 'none';
+  }
+}
+
+// ================================================================
+// SECTION 5: REMEDIATION
+// ================================================================
+const FINDINGS_DATA = [
+  {
+    priority: 'P0', pClass: 'badge-p0',
+    cve: 'CVE-2025-12345', cwe: 'CWE-502',
+    title: 'Unsafe Deserialization in Request Parser',
+    plain: 'The acme-request-parser library (v1.4.2) deserializes untrusted data without validation. An attacker can craft a malicious payload that executes arbitrary code on the server when parsed — no authentication required. This is actively exploited in the wild (CISA KEV).',
+    score: '96.4',
+    steps: [
+      { cmd:'pip show acme-request-parser', desc:'Confirm installed version (expect 1.4.2)' },
+      { cmd:'pip install "acme-request-parser>=1.4.6" --dry-run', desc:'[DRY RUN] Upgrade to patched version' },
+      { cmd:'grep -r "acme_request_parser" src/ --include="*.py"', desc:'Find all import sites for review' },
+      { cmd:'python -m pytest tests/deserialization/ -v', desc:'Run deserialization test suite' },
+      { cmd:'pip install "acme-request-parser>=1.4.6"', desc:'Apply upgrade (requires consent)' },
+    ],
+    rollback: 'pip install "acme-request-parser==1.4.2"',
+  },
+  {
+    priority: 'P1', pClass: 'badge-p1',
+    cve: 'CVE-2025-22222', cwe: 'CWE-79',
+    title: 'Reflected XSS in User Search Endpoint',
+    plain: 'The /api/users/search endpoint reflects user-supplied input in the response HTML without sanitisation. An attacker can craft a URL that, when clicked by a victim, executes JavaScript in their browser — stealing session cookies or performing actions on their behalf.',
+    score: '73.2',
+    steps: [
+      { cmd:'curl -s "https://app/api/users/search?q=<script>alert(1)</script>"', desc:'[DRY RUN] Confirm XSS reflection exists' },
+      { cmd:'grep -r "search?q=" templates/ src/ --include="*.html" --include="*.py"', desc:'Find all reflection points in templates' },
+      { cmd:'pip install "bleach>=6.1.0" --dry-run', desc:'[DRY RUN] Install HTML sanitisation library' },
+      { cmd:'python scripts/patch_xss.py --dry-run', desc:'Preview template patching changes' },
+      { cmd:'python scripts/patch_xss.py --apply', desc:'Apply XSS patches (requires consent)' },
+    ],
+    rollback: 'git revert HEAD~1 --no-commit && git stash',
+  },
+  {
+    priority: 'P2', pClass: 'badge-p2',
+    cve: 'CVE-2024-99999', cwe: 'CWE-89',
+    title: 'SQL Injection in User Lookup',
+    plain: 'The user lookup function builds SQL queries using string concatenation of untrusted input. An attacker can manipulate the query to extract arbitrary data from the database, bypass authentication, or modify records. The service is not internet-facing, limiting immediate risk.',
+    score: '56.6',
+    steps: [
+      { cmd:'sqlmap -u "http://internal-app/api/users?id=1" --batch --dry-run', desc:'[DRY RUN] Confirm SQL injection point' },
+      { cmd:'grep -n "execute.*%s\\|format.*SELECT\\|+.*WHERE" src/ -r --include="*.py"', desc:'Find all raw string SQL concatenation' },
+      { cmd:'python scripts/migrate_to_orm.py --check', desc:'Identify queries not using parameterised statements' },
+      { cmd:'python -m pytest tests/sql_injection/ -v', desc:'Run SQL injection regression tests' },
+      { cmd:'python scripts/migrate_to_orm.py --apply', desc:'Apply ORM migration (requires consent)' },
+    ],
+    rollback: 'git stash && python manage.py migrate --fake',
+  },
+];
+
+let dryRunTimers = {};
+let playbookOpen = {};
+
+function renderRemediation() {
+  const el = document.getElementById('remediationCards');
+  if (el.innerHTML.trim()) return;
+  el.innerHTML = FINDINGS_DATA.map((f, fi) => `
+    <div class="finding-card" id="finding-${fi}">
+      <div class="finding-header">
+        <div class="finding-meta">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span class="badge ${f.pClass}">${f.priority} ${f.priority === 'P0' ? 'Critical' : f.priority === 'P1' ? 'High' : 'Medium'}</span>
+            <span class="tag mono">${f.cve}</span>
+            <span class="tag">${f.cwe}</span>
+            <span class="tag" style="margin-left:auto;">Score: <strong>${f.score}</strong></span>
+          </div>
+          <div class="finding-title">${f.title}</div>
+          <div class="finding-plain">${f.plain}</div>
+        </div>
+      </div>
+      <div class="finding-actions">
+        <button class="btn btn-secondary" onclick="togglePlaybook(${fi})" id="pb-btn-${fi}">📋 View Playbook</button>
+        <button class="btn btn-ghost" onclick="startDryRun(${fi})" id="dr-btn-${fi}">▶ Dry Run</button>
+        <button class="btn btn-danger" onclick="openConsentGate(${fi})" style="margin-left:auto;">⚡ Apply Fix</button>
+        <button class="btn btn-ghost" onclick="showRollback(${fi})" style="font-size:12px;">↺ Rollback</button>
+      </div>
+      <div class="playbook-panel" id="playbook-${fi}">
+        <div class="divider"></div>
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:0.5px;">REMEDIATION STEPS</div>
+        ${f.steps.map((s,si) => `
+          <div class="playbook-step" id="pstep-${fi}-${si}">
+            <div class="step-num" id="stepnum-${fi}-${si}">${si+1}</div>
+            <div>
+              <div class="step-cmd">${s.cmd}</div>
+              <div class="step-desc mt-2">${s.desc}</div>
+            </div>
+          </div>`).join('')}
+        <div id="rollback-${fi}" style="display:none;margin-top:10px;padding:10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
+          <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px;">ROLLBACK COMMAND</div>
+          <div class="mono text-sm" style="color:var(--yellow);">${f.rollback}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function togglePlaybook(fi) {
+  const panel = document.getElementById(`playbook-${fi}`);
+  const btn = document.getElementById(`pb-btn-${fi}`);
+  const open = playbookOpen[fi];
+  playbookOpen[fi] = !open;
+  panel.classList.toggle('open', !open);
+  btn.textContent = !open ? '📋 Hide Playbook' : '📋 View Playbook';
+}
+
+async function startDryRun(fi) {
+  if (!playbookOpen[fi]) togglePlaybook(fi);
+  const f = FINDINGS_DATA[fi];
+  const btn = document.getElementById(`dr-btn-${fi}`);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Running…';
+
+  for (let si = 0; si < f.steps.length; si++) {
+    await sleep(700);
+    const numEl = document.getElementById(`stepnum-${fi}-${si}`);
+    numEl.classList.add('done');
+    numEl.textContent = '✓';
+    const step = document.getElementById(`pstep-${fi}-${si}`);
+    step.style.opacity = '0.7';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✓ Dry Run Complete';
+  await sleep(2000);
+  btn.innerHTML = '▶ Dry Run';
+  // Reset
+  for (let si = 0; si < f.steps.length; si++) {
+    const numEl = document.getElementById(`stepnum-${fi}-${si}`);
+    numEl.classList.remove('done');
+    numEl.textContent = si + 1;
+    document.getElementById(`pstep-${fi}-${si}`).style.opacity = '';
+  }
+}
+
+function showRollback(fi) {
+  const el = document.getElementById(`rollback-${fi}`);
+  if (!playbookOpen[fi]) togglePlaybook(fi);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+let consentGateFi = null;
+function openConsentGate(fi) {
+  consentGateFi = fi;
+  document.getElementById('consentGateInput').value = state.wizard.receiptId || '';
+  document.getElementById('consentGateModal').style.display = 'flex';
+}
+function closeConsentGate() {
+  document.getElementById('consentGateModal').style.display = 'none';
+}
+async function verifyConsentGate() {
+  const val = document.getElementById('consentGateInput').value.trim();
+  if (!val.startsWith('crcpt-')) {
+    document.getElementById('consentGateInput').style.animation = 'shake .3s ease';
+    setTimeout(() => document.getElementById('consentGateInput').style.animation = '', 400);
+    return;
+  }
+  closeConsentGate();
+  if (consentGateFi !== null) {
+    await startDryRun(consentGateFi);
+  }
+}
+
+// ================================================================
+// SECTION 6: LIVE FEED
+// ================================================================
+const EVENT_TYPES = [
+  { type:'auth_failure',       icons:'🔑', techs:['T1110','T1078'], tnames:['Brute Force','Valid Accounts'],          severities:['high','critical'], weight:25 },
+  { type:'new_process',        icons:'⚙️', techs:['T1059'],         tnames:['Scripting Interpreter'],                 severities:['medium','low'],    weight:20 },
+  { type:'impossible_travel',  icons:'✈️', techs:['T1078'],         tnames:['Valid Accounts'],                        severities:['high','critical'], weight:15 },
+  { type:'log_clear',          icons:'🗑️', techs:['T1070.001'],     tnames:['Clear Event Logs'],                      severities:['high','critical'], weight:15 },
+  { type:'security_tool_stop', icons:'🛡️', techs:['T1562.001'],     tnames:['Disable or Modify Tools'],               severities:['critical'],        weight:10 },
+  { type:'data_exfil_attempt', icons:'📤', techs:['T1041'],         tnames:['Exfiltration Over C2 Channel'],          severities:['critical'],        weight:10 },
+  { type:'lateral_move',       icons:'↔️', techs:['T1021.004'],     tnames:['SSH'],                                   severities:['high'],            weight:10 },
+  { type:'config_change',      icons:'📝', techs:['T1562'],         tnames:['Impair Defenses'],                       severities:['medium','low'],    weight:15 },
+  { type:'dns_anomaly',        icons:'🌐', techs:['T1071.004'],     tnames:['DNS C2'],                                severities:['medium','high'],   weight:10 },
+  { type:'file_integrity',     icons:'📁', techs:['T1565'],         tnames:['Data Manipulation'],                     severities:['medium'],          weight:10 },
+];
+const ASSETS = ['payments-api','auth-service','db-primary','api-gateway','worker-01','worker-02','admin-portal','internal-vpn'];
+
+function weightedRandom(items) {
+  const totalWeight = items.reduce((s, i) => s + i.weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const item of items) { r -= item.weight; if (r < 0) return item; }
+  return items[items.length - 1];
+}
+
+function makeFeedEntry() {
+  const et = weightedRandom(EVENT_TYPES);
+  const techIdx = Math.floor(Math.random() * et.techs.length);
+  const severity = et.severities[Math.floor(Math.random() * et.severities.length)];
+  const asset = ASSETS[Math.floor(Math.random() * ASSETS.length)];
+  const score = severity === 'critical' ? Math.floor(Math.random()*20+80) :
+                severity === 'high'     ? Math.floor(Math.random()*20+55) :
+                severity === 'medium'   ? Math.floor(Math.random()*25+30) :
+                                          Math.floor(Math.random()*30);
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  return { ts, type:et.type, icon:et.icons, tech:et.techs[techIdx], tname:et.tnames[techIdx], severity, asset, score };
+}
+
+function anomalyColor(score) {
+  if (score >= 75) return '#ef4444';
+  if (score >= 50) return '#f59e0b';
+  if (score >= 30) return '#06b6d4';
+  return '#22c997';
+}
+
+function addFeedEntry(entry) {
+  const list = document.getElementById('feedList');
+  const div = document.createElement('div');
+  div.className = `feed-entry${entry.severity === 'critical' ? ' critical' : ''}`;
+  div.innerHTML = `
+    <span class="feed-time">${entry.ts}</span>
+    <span class="severity-dot ${entry.severity}"></span>
+    <span class="feed-event-type">${entry.icon} ${entry.type.replace(/_/g,' ')}</span>
+    <span class="feed-asset">${entry.asset}</span>
+    <span class="feed-technique">${entry.tech}</span>
+    <div class="anomaly-bar-wrap">
+      <div class="anomaly-bar"><div class="anomaly-fill" style="width:${entry.score}%;background:${anomalyColor(entry.score)};"></div></div>
+      <div class="anomaly-val">${entry.score}</div>
+    </div>`;
+
+  list.insertBefore(div, list.firstChild);
+
+  // Keep max 20
+  const entries = list.querySelectorAll('.feed-entry');
+  if (entries.length > 20) {
+    const last = entries[entries.length - 1];
+    last.classList.add('fading');
+    setTimeout(() => last.remove(), 500);
+  }
+
+  // Update stats
+  state.feed.total++;
+  state.feed.scoreSum += entry.score;
+  state.feed.assets.add(entry.asset);
+  if (entry.severity === 'critical') state.feed.critical++;
+
+  document.getElementById('feedTotal').textContent = state.feed.total;
+  document.getElementById('feedCritical').textContent = state.feed.critical;
+  document.getElementById('feedAssets').textContent = state.feed.assets.size;
+  document.getElementById('feedAvgScore').textContent = Math.round(state.feed.scoreSum / state.feed.total);
+
+  // Alert banner
+  if (entry.score > 70) {
+    const banner = document.getElementById('alertBanner');
+    banner.classList.remove('hidden');
+    document.getElementById('alertDetail').textContent =
+      `${entry.icon} ${entry.type.replace(/_/g,' ')} on ${entry.asset} — anomaly score ${entry.score} → ${entry.tech} (${entry.tname})`;
+    clearTimeout(banner._timer);
+    banner._timer = setTimeout(() => banner.classList.add('hidden'), 5000);
+  }
+}
+
+let feedInterval = null;
+function startFeed() {
+  if (feedInterval) return;
+  feedInterval = setInterval(() => {
+    if (state.feed.running) addFeedEntry(makeFeedEntry());
+  }, 1500);
+}
+
+function toggleFeed() {
+  state.feed.running = !state.feed.running;
+  document.getElementById('feedToggleBtn').textContent = state.feed.running ? '⏸ Pause Feed' : '▶ Start Feed';
+  document.getElementById('feedToggleBtn').className = state.feed.running ? 'btn btn-secondary' : 'btn btn-primary';
+}
+
+function clearFeed() {
+  document.getElementById('feedList').innerHTML = '';
+  state.feed = { running: state.feed.running, total:0, critical:0, scoreSum:0, assets: new Set() };
+  document.getElementById('feedTotal').textContent = 0;
+  document.getElementById('feedCritical').textContent = 0;
+  document.getElementById('feedAssets').textContent = 0;
+  document.getElementById('feedAvgScore').textContent = '—';
+  document.getElementById('alertBanner').classList.add('hidden');
+}
+
+// ================================================================
+// INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  buildPipelineStages();
+  buildScopesUI();
+  startFeed();
+  // Seed a few initial feed entries
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => addFeedEntry(makeFeedEntry()), i * 200);
+  }
+});
+</script>
+</body>
+</html>
