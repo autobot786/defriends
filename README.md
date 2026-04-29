@@ -30,7 +30,7 @@ defriends is a defensive security platform that runs on the machines you own, wi
 
 ## Architecture at a glance
 
-defriends processes security evidence through an 8-layer pipeline.
+defriends processes security evidence through an 8-layer pipeline (plus a Security Core middleware layer):
 
 | # | Layer | Responsibility |
 |:--:|:----|:---|
@@ -46,16 +46,43 @@ defriends processes security evidence through an 8-layer pipeline.
 
 ---
 
+## Animated Demo
+
+Click the preview below to open the live, interactive demo:
+
+[![defriends animated demo preview](demo-preview.gif)](https://autobot786.github.io/defriends/demo.html)
+
+> If the image doesn’t render yet, add `demo-preview.gif` (or `demo-preview.mp4` as a GIF alternative) to the repository root.
+
+---
+
 ## Interactive Demo
 
 Open the **live, interactive demo** to see the end-to-end working process (consent → evidence → MITRE mapping → risk scoring → remediation):
 
 - **Demo file:** [`demo.html`](./demo.html)
 
-### Run the demo (no install)
+### Option A (recommended): Hosted demo (GitHub Pages)
+
+Once enabled, you’ll have a public URL like:
+
+- `https://autobot786.github.io/defriends/demo.html`
+
+**Enable it**:
+1. Go to **Settings → Pages**
+2. **Source:** “Deploy from a branch”
+3. Select **Branch:** `main` and **Folder:** `/ (root)`
+4. Save
+
+### Option B: Open locally (no server)
+
+`demo.html` is a self-contained, zero-dependency browser demo. Open it with any modern browser — no build step.
 
 ```bash
 # Clone the repo and open the demo directly
+git clone https://github.com/autobot786/defriends.git
+cd defriends
+
 open demo.html          # macOS
 xdg-open demo.html      # Linux
 start demo.html         # Windows
@@ -102,6 +129,9 @@ python agents/dirtybots_agent.py --server http://127.0.0.1:8080 \
 curl http://127.0.0.1:8080/health
 ```
 
+First-time users get the onboarding wizard at `/v1/ai/app/onboarding/steps`; the assistant tailors a "what to do first" checklist based on role, jurisdiction, platform, and risk appetite.
+
+
 ---
 
 ## Privacy, consent & data handling
@@ -117,15 +147,17 @@ defriends is built around ISO/IEC 29184 consent-receipt semantics, mapped to eac
 
 ### Retention
 
-* **Default: 7 days** for every data scope. The client-side log collector runs a reaper every hour and hard-deletes anything past the window.
-* **Extended retention** is only possible when (a) the scoring service flags a finding as serious (CVSS ≥ 7 or KEV-listed) AND (b) you grant a new consent receipt. The ceiling is 90 days.
-* **Revocation** wipes the local cache and invalidates every in-flight collection on the next heartbeat.
+- **Default: 7 days** for every data scope.
+- **Extended retention** only for serious findings *and* requires a new consent receipt (max 90 days).
+- **Revocation** wipes the local cache and invalidates in-flight collection on next heartbeat.
 
 ### What is collected
 
-Every scope is opt-in, set separately, and defaults to 7-day retention.
+Every scope is opt-in, set separately, and defaults to 7-day retention:
 
-Raw logs never leave the client. The upstream receives only aggregated counters plus up to 25 PII-redacted "interesting" snippets per batch.
+`system_logs` · `application_logs` · `auth_logs` · `network_metadata` · `process_metadata` · `installed_software` · `file_integrity_hashes` · `vulnerability_scans` · `behavioral_telemetry`
+
+Raw logs never leave the client. Upstream receives only aggregated counters plus up to 25 PII-redacted snippets per batch.
 
 ---
 
@@ -141,11 +173,41 @@ Every finding is resolved to a MITRE technique. The rule pack at `rules/mapping/
 score = (cvss/10 × 55) + (epss × 25) + (kev × 10) + (reachable × 7) + (internet × 3)
 ```
 
+| Priority | Score | Action |
+|:---|:---:|:---|
+| **P0 — Critical** | ≥ 85 | Fix today |
+| **P1 — High** | ≥ 70 | Fix within 7 days |
+| **P2 — Medium** | ≥ 50 | Fix this sprint |
+| **P3 — Low** | < 50 | Track and monitor |
+
+
 ---
 
 ## Remediation with auto-fix (dry-run first)
 
 Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — the apply mode requires a valid consent receipt.
+
+---
+
+## AI application assistant
+
+`/v1/ai/app/ask` is a deterministic, local, layman-friendly assistant. It explains anything in plain language and can generate an onboarding plan.
+
+---
+
+## Security posture
+
+| Control | Where it lives | What it does |
+|:---|:---|:---|
+| HMAC-SHA256 event signing | `security_core/hmac_signer.py` | Ingestion rejects any event with bad signature or > 5-min timestamp skew |
+| Token-bucket rate limiting | `security_core/rate_limit.py` | 120 req/min per IP or API key, returns 429 + Retry-After |
+| Security response headers | `security_core/middleware.py` | HSTS, CSP, COOP, CORP, X-Content-Type-Options |
+| Request body size cap | `security_core/middleware.py` | 5 MiB hard cap, 413 on exceed |
+| Secret redaction | `security_core/sanitize.py` | Strips tokens/keys from outbound log/error |
+| Prompt-injection filter | `security_core/sanitize.py` | Regex + HTML-strip defenses |
+| SSRF guard | `security_core/sanitize.py` | Blocks private/link-local/metadata IPs on server-side fetch |
+| At-rest encryption | `agents/collectors/log_collector.py` | AES-256-GCM on SQLite cache |
+| Tamper-evident audit log | `services/consent/app/store.py` | Hash-chained audit log; audit endpoint validates chain |
 
 ---
 
@@ -177,7 +239,9 @@ secmesh_scaffold/
 ├── agents/
 │   ├── collectors/
 │   │   └── log_collector.py
-│   └── dirtybots_agent.py
+│   ├── dirtybots_agent.py
+│   ├── scripts/
+│   └── examples/
 ├── packages/common/
 ├── rules/
 ├── schemas/
@@ -186,6 +250,16 @@ secmesh_scaffold/
 ```
 
 ---
+
+## Deployment modes
+
+| Mode | Command | Best for |
+|:---|:---|:---|
+| **Unified** | `python -m secmesh_scaffold` | Dev, laptops, free-tier |
+| **Microservices** | `docker compose up --build` | Production, horizontal scale |
+
+---
+
 
 ## Defensive-only notice
 
