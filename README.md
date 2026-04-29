@@ -10,6 +10,7 @@
 [![Privacy](https://img.shields.io/badge/Privacy-GDPR%20%7C%20CCPA%20%7C%20HIPAA-22d3ee?style=for-the-badge)](#privacy-consent--data-handling)
 [![Retention](https://img.shields.io/badge/Default%20Retention-7%20days-7c6af0?style=for-the-badge)](#retention)
 [![Python](https://img.shields.io/badge/Python-3.10+-3b82f6?style=for-the-badge&logo=python&logoColor=white)](#quickstart)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Interactive-06b6d4?style=for-the-badge)](#interactive-demo)
 
 </div>
 
@@ -65,6 +66,28 @@ defriends processes security evidence through an 8-layer pipeline. The first fou
                                                        ▼
                           PDF + JSON + dry-run fix scripts + chat
 ```
+
+---
+
+## Interactive Demo
+
+`demo.html` is a self-contained, zero-dependency browser demo that lets you explore the full defriends pipeline without running a server. Open it with any modern browser — no build step, no install.
+
+```bash
+# Clone the repo and open the demo directly
+open demo.html          # macOS
+xdg-open demo.html      # Linux
+start demo.html         # Windows
+```
+
+| Section | What you can do |
+|:--------|:----------------|
+| 🔄 **Pipeline** | Click "Run Demo Pipeline" — watch a data packet flow through all 8 layers with a streaming log |
+| 🔐 **Consent Wizard** | Walk through the 4-step GDPR/CCPA/HIPAA consent flow and generate a `crcpt-*` receipt |
+| 📊 **Risk Scorer** | Drag CVSS/EPSS sliders and toggle KEV/Reachable/Internet flags — the score gauge updates live |
+| 🗺️ **MITRE ATT&CK Map** | Explore tactic columns populated from real sample findings; click any card for CVE/CWE details |
+| 🛠️ **Remediation** | Step through P0→P1→P2 playbooks with an animated dry-run; Apply Fix is consent-gated |
+| 📡 **Live Feed** | Watch a simulated behavioral-event stream with MITRE mappings and anomaly scores |
 
 ---
 
