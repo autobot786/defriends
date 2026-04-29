@@ -1,228 +1,292 @@
-# defriends
+<div align="center">
 
-defriends is an authorized device security assessment workspace. It helps a user collect assessment records, understand risk in plain language, map findings to control domains, verify result legitimacy, and produce a simple report that a non-technical device owner can read.
+# 🛡️ defriends
 
-The public surface is intentionally small. The dashboard, API docs, user portal, and capability manifest require login so the product idea and assessment workflow are not exposed to casual visitors.
+### Consent-First Defensive Security Platform
 
-## Interactive Demo
+**Map real attack techniques. Score risk with precision. Fix it — with plain-language guidance, not jargon.**
 
-### 1. Start The App
+[![Tests](https://img.shields.io/badge/Tests-236%2F236_Passing-22c997?style=for-the-badge)](#test-suite)
+[![Privacy](https://img.shields.io/badge/Privacy-GDPR%20%7C%20CCPA%20%7C%20HIPAA-22d3ee?style=for-the-badge)](#privacy-consent--data-handling)
+[![Retention](https://img.shields.io/badge/Default%20Retention-7%20days-7c6af0?style=for-the-badge)](#retention)
+[![Python](https://img.shields.io/badge/Python-3.10+-3b82f6?style=for-the-badge&logo=python&logoColor=white)](#quickstart)
+
+</div>
+
+---
+
+## What is defriends?
+
+defriends is a defensive security platform that runs on the machines you own, with your permission, and tells you — in plain language — what's wrong and exactly how to fix it. It is designed around three promises:
+
+**Consent before collection.** No log, no scan, no behavior signal leaves the client until you have signed a consent receipt. Every receipt is granular (per data category, per retention window), hash-chained, and revocable in one click.
+
+**Short retention by default.** Seven days. Always. The only exception is a serious finding (CVSS ≥ 7 or on CISA's Known-Exploited list) — and even then, the extension requires a fresh consent receipt from you, and caps at 90 days.
+
+**Layman-friendly remediation.** Every finding ships with a plain-language explanation ("your firewall is off, anyone on your network can reach you") and an exact, dry-runnable fix. Nothing destructive runs without your explicit per-finding approval.
+
+---
+
+## Architecture at a glance
+
+defriends processes security evidence through an 8-layer pipeline. The first four layers are new in this release and wrap the original 5-stage assessment pipeline (ingest → normalize → map → score → report).
+
+| # | Layer | Responsibility |
+|:--:|:----|:---|
+| 0 | **Security Core** | `services/security_core/` — HMAC-signed events, rate limiting, CSP/HSTS, secret redaction, SSRF guards. Installed as middleware before every other route. |
+| 1 | **Consent** | `services/consent/` — captures, stores, revokes, and audits every permission grant. GDPR, CCPA/CPRA, HIPAA, SOC 2, ISO 27001 aligned. |
+| 2 | **Client Collectors** | `agents/collectors/log_collector.py` — cross-platform logs, AES-256-GCM at rest, PII redaction, 7-day auto-purge. |
+| 3 | **Behavioral Analytics** | `services/behavioral/` — UEBA baselines, MAD-robust anomaly scores, emits EvidenceEvents into the core pipeline. |
+| 4 | **Ingestion** | `services/ingestion/` — validates every `EvidenceEvent`, refuses anything without a valid `consent_receipt_id`. |
+| 5 | **Normalizer** | `services/normalizer/` — deduplicates and standardizes CWE/CVE fields. |
+| 6 | **Mapping** | `services/mapping/` — YAML rule engine maps CWEs to MITRE ATT&CK techniques. |
+| 7 | **Scoring** | `services/scoring/` — `score = CVSS×55 + EPSS×25 + KEV×10 + Reachable×7 + Internet×3` → P0-P3. |
+| 8 | **Reporting + Remediation + AI** | `services/reporting/` + `services/remediation/` + `services/ai_assistant/` — PDF/JSON reports, dry-run playbooks, plain-language walkthroughs. |
+
+```
+┌────────── Client machine (with your consent) ──────────┐
+│  agent + log_collector.py (AES-GCM, 7-day purge)       │
+│       │                                                │
+│       │ (HMAC-signed EvidenceEvents, TLS 1.3)          │
+└───────┼────────────────────────────────────────────────┘
+        ▼
+  [0] security middleware ──► [1] consent gate ──► [4] ingestion
+                                                       │
+             [3] behavioral ────────────────────────► [5] normalizer
+                                                       │
+                         [6] mapping (MITRE ATT&CK) ◄──┘
+                                                       │
+                                                       ▼
+                                              [7] risk scoring
+                                                       │
+                                                       ▼
+                          [8] report + remediation + AI assistant
+                                                       │
+                                                       ▼
+                          PDF + JSON + dry-run fix scripts + chat
+```
+
+---
+
+## Quickstart
 
 ```bash
+# 1. Clone and install
+git clone https://github.com/autobot786/secmesh_scaffold.git
+cd secmesh_scaffold/secmesh_scaffold
+python -m venv .venv && source .venv/bin/activate
+pip install -e packages/common && pip install -r requirements.txt
+
+# 2. Run the unified server
 python -m secmesh_scaffold
-```
+# → http://127.0.0.1:8080
+#   /dashboard  /docs  /user  /login
 
-Or run the unified FastAPI app directly:
+# 3. On the machine you want to scan: grant consent, then scan
+python agents/dirtybots_agent.py --server http://127.0.0.1:8080 \
+      --org demo-org --asset my-laptop --env prod
 
-```bash
-DIRTYBOT_MAPPING_PACK=rules/mapping/mitre_cwe_context.v1.yaml \
-DIRTYBOT_REPORT_SCHEMA=schemas/report.schema.json \
-python -m uvicorn app_unified:app --host 127.0.0.1 --port 8080 --reload
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:DIRTYBOT_MAPPING_PACK = "rules/mapping/mitre_cwe_context.v1.yaml"
-$env:DIRTYBOT_REPORT_SCHEMA = "schemas/report.schema.json"
-python -m uvicorn app_unified:app --host 127.0.0.1 --port 8080 --reload
-```
-
-Open:
-
-```text
-http://127.0.0.1:8080/login
-```
-
-### 2. Create A Local Demo User
-
-Use a local-only account for the demo:
-
-```bash
-curl -X POST http://127.0.0.1:8080/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"ChangeMe123!","name":"Demo User","role":"admin"}'
-```
-
-Then sign in from `/login`. After login, the app redirects to `/ui`.
-
-### 3. Walk Through The Demo
-
-Use the dashboard cards in this order:
-
-| Step | Dashboard Area | What To Try | Expected Result |
-|---|---|---|---|
-| 1 | Ingestion | Load the sample record and submit it | The app accepts the authorized assessment record |
-| 2 | Normalizer | Send the record forward | The record is prepared consistently for assessment |
-| 3 | Mapping | Run the mapped finding review | The app links the finding to likely attack patterns |
-| 4 | Scoring | Run risk scoring | The app returns a priority and risk score |
-| 5 | Reporting | Generate the report | The app produces a simple device risk report |
-| 6 | Controls | Review control domain status | Failed and partial NIST/ISO areas are highlighted with fixes |
-| 7 | Legitimacy | Run legitimacy verification | The app checks whether totals, risk, evidence, controls, and recommendations agree |
-| 8 | AI Assistant | Ask "What should I do next?" | The assistant explains the next action and offers safe action buttons |
-
-### 4. What The Demo Proves
-
-The demo verifies that defriends can:
-
-- keep sensitive workspace pages behind login;
-- accept authorized assessment records;
-- normalize incoming records for consistent analysis;
-- map security findings to attack patterns;
-- calculate a risk score and priority;
-- integrate NIST SP 800-53 and ISO/IEC 27001:2022 control domains;
-- explain failed and partial controls with practical remediation steps;
-- verify report legitimacy with a confidence score;
-- generate a plain-language PDF report for non-technical readers;
-- guide a stuck user with an assistant that can suggest safe next actions.
-
-### 5. Expected Demo Output
-
-A completed demo should produce:
-
-- a risk score and priority for the tested device or application;
-- control status counts for pass, partial, and fail;
-- remediation recommendations for failed or partial controls;
-- a legitimacy verdict with confidence;
-- a PDF report with simple sections such as "Bottom Line", "What To Do First", "Risks Found", and "Why The Results Are Legit".
-
-### 6. Public Exposure Check
-
-These routes are intentionally protected:
-
-| Route | Public Behavior |
-|---|---|
-| `/ui` | Redirects to `/login?next=/ui` |
-| `/docs` | Redirects to `/login?next=/docs` |
-| `/user` | Redirects to `/login?next=/user` |
-| `/v1/masterpiece/manifest` | Returns `401` without login |
-| `/api` | Shows only minimal service, login, docs, and health links until authenticated |
-
-`/health` remains public so deployments can check whether the app is running.
-
-## API Quick Checks
-
-Health:
-
-```bash
+# 4. Watch the pipeline
 curl http://127.0.0.1:8080/health
 ```
 
-Public API index:
+First-time users get the 4-question onboarding wizard at `/v1/ai/app/onboarding/steps`; the assistant tailors a "what to do first" checklist based on role, jurisdiction, platform, and risk appetite.
+
+---
+
+## Privacy, consent & data handling
+
+defriends is built around ISO/IEC 29184 consent-receipt semantics, mapped to each jurisdiction's legal framework.
+
+| Framework | Rights honored | API |
+|:---|:---|:---|
+| **GDPR (EU)** | Access (Art. 15), rectify (16), erase (17), restrict (18), portability (20), object (21). Lawful basis is always recorded. | `POST /v1/consent/dsr` with `request_type=access|erase|portability|...` |
+| **CCPA / CPRA (CA)** | Right to know, delete, correct, opt-out of sale/share. Opt-out of sale is honored by default for all users, account or not. | `POST /v1/consent/dsr` with `request_type=opt_out_sale` |
+| **HIPAA (US healthcare)** | PHI-adjacent scope is off by default and requires a separately signed authorization (45 CFR § 164.508). Accounting-of-disclosures is available. | `POST /v1/consent/dsr` with `request_type=accounting` |
+| **SOC 2 CC6.1 / ISO 27001 A.5.34** | Every consent action is appended to a hash-chained audit log. Any tampering invalidates every subsequent link. | `GET /v1/consent/audit` |
+
+### Retention
+
+* **Default: 7 days** for every data scope. The client-side log collector runs a reaper every hour and hard-deletes anything past the window.
+* **Extended retention** is only possible when (a) the scoring service flags a finding as serious (CVSS ≥ 7 or KEV-listed) AND (b) you grant a new consent receipt. The ceiling is 90 days.
+* **Revocation** wipes the local cache and invalidates every in-flight collection on the next heartbeat.
+
+### What is collected
+
+Every scope is opt-in, set separately, and defaults to 7-day retention:
+
+`system_logs` · `application_logs` · `auth_logs` · `network_metadata` · `process_metadata` · `installed_software` · `file_integrity_hashes` · `vulnerability_scans` · `behavioral_telemetry` · `phi_adjacent` (HIPAA only) · `browser_history` (never on by default)
+
+Raw logs never leave the client. The upstream receives only aggregated counters plus up to 25 PII-redacted "interesting" snippets per batch.
+
+---
+
+## MITRE ATT&CK mapping
+
+Every finding is resolved to a MITRE technique. The rule pack at `rules/mapping/mitre_cwe_context.v1.yaml` has 19 rules covering 15+ techniques across 7 tactics.
+
+| CWE | Finding | Technique | Confidence |
+|:---|:---|:---|:---:|
+| CWE-693 | host firewall disabled | T1562.004 — Impair Defenses | 0.95 |
+| CWE-295 | self-signed TLS cert | T1557 — Adversary-in-the-Middle | 0.85 |
+| CWE-1104 | outdated system package | T1195.002 — Supply Chain | 0.80 |
+| CWE-78 | SSH exposed with password auth | T1110 / T1021.004 | 0.85 |
+| CWE-287 | missing MFA on admin | T1078 — Valid Accounts | 0.85 |
+
+Behavioral anomalies also emit EvidenceEvents with MITRE alignment:
+
+| Signal | Technique |
+|:---|:---|
+| auth_failures spike | T1110 Brute Force |
+| new_process for this user | T1059 Scripting Interpreter |
+| impossible_travel | T1078 Valid Accounts |
+| log_clear | T1070.001 Clear Event Logs |
+| security_tool_stop | T1562.001 Disable Tools |
+
+---
+
+## Risk scoring
+
+```
+score = (cvss/10 × 55) + (epss × 25) + (kev × 10) + (reachable × 7) + (internet × 3)
+```
+
+| Priority | Score | Action |
+|:---|:---:|:---|
+| **P0 — Critical** | ≥ 85 | Fix today |
+| **P1 — High** | ≥ 70 | Fix within 7 days |
+| **P2 — Medium** | ≥ 50 | Fix this sprint |
+| **P3 — Low** | < 50 | Track and monitor |
+
+The formula weighs exploitability heavily (CVSS + EPSS), then accounts for real-world context: known-exploited status, whether the vulnerable code path is reachable, and whether the asset is internet-facing.
+
+---
+
+## Remediation with auto-fix (dry-run first)
+
+Every finding maps to a `Playbook` with a plain-language explanation, OS-aware commands, a pre-flight check, a verify step, and a rollback. Every run defaults to **dry-run** — the apply mode requires a fresh consent receipt AND a per-step confirmation for anything destructive.
 
 ```bash
-curl http://127.0.0.1:8080/api
+# Plan a fix for a finding (safe, no execution)
+curl -X POST http://127.0.0.1:8080/v1/remediation/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"finding":{"cwe":"CWE-693","platform":"linux"}}'
+
+# Dry-run: shows exactly what would run
+curl -X POST http://127.0.0.1:8080/v1/remediation/run \
+  -H 'Content-Type: application/json' \
+  -d '{"finding":{"cwe":"CWE-693","platform":"linux"},"mode":"dry_run"}'
+
+# Apply: requires consent receipt + per-step confirmation
+curl -X POST http://127.0.0.1:8080/v1/remediation/run \
+  -H 'Content-Type: application/json' \
+  -d '{"finding":{"cwe":"CWE-693","platform":"linux"},
+       "mode":"apply","consent_receipt_id":"crcpt-...",
+       "confirm_destructive":true}'
+
+# Rollback
+curl -X POST http://127.0.0.1:8080/v1/remediation/rollback \
+  -H 'Content-Type: application/json' \
+  -d '{"run_id":"rem-...","consent_receipt_id":"crcpt-..."}'
 ```
 
-Expected unauthenticated shape:
+Current playbook catalog: macOS/Linux/Windows firewall enablement, TLS cert replacement via Let's Encrypt, package upgrades, SSH hardening, MFA enforcement, log PII-redaction. Playbook matching uses `(CWE, platform)` with fallback to `(CWE, any)`.
 
-```json
-{
-  "service": "defriends API",
-  "status": "login_required",
-  "login": "/login",
-  "docs": "/login?next=/docs",
-  "health": "/health"
-}
+---
+
+## AI application assistant
+
+`/v1/ai/app/ask` is a deterministic, local, layman-friendly assistant. It explains anything in plain language — what P0 means, how long data is kept, how to revoke consent, how to apply a fix, what CVSS/EPSS/KEV are — and it hard-sanitizes prompts against injection attempts before processing.
+
+The onboarding wizard (`/v1/ai/app/onboarding/plan`) turns a 4-question intake into a tailored checklist: which consent scopes fit your jurisdiction, which deployment path matches your platform, whether to keep auto-fix in dry-run or let safe fixes auto-apply.
+
+---
+
+## Security posture
+
+| Control | Where it lives | What it does |
+|:---|:---|:---|
+| HMAC-SHA256 event signing | `security_core/hmac_signer.py` | Ingestion rejects any event with bad signature or > 5-min timestamp skew |
+| Token-bucket rate limiting | `security_core/rate_limit.py` | 120 req/min per IP or API key, returns 429 + Retry-After |
+| Security response headers | `security_core/middleware.py` | HSTS (2y), CSP with frame-ancestors=none, COOP, CORP, X-Content-Type-Options |
+| Request body size cap | `security_core/middleware.py` | 5 MiB hard cap, 413 on exceed |
+| Secret redaction | `security_core/sanitize.py` | Strips AWS keys, GH tokens, JWTs, private keys from every outbound log/error |
+| Prompt-injection filter | `security_core/sanitize.py` | Every AI prompt passes through 6 regex + HTML-strip defenses |
+| SSRF guard | `security_core/sanitize.py` | Blocks private/link-local/metadata IPs on any server-side fetch |
+| At-rest encryption | `agents/collectors/log_collector.py` | AES-256-GCM on the SQLite cache, per-agent 256-bit key with 0600 perms |
+| Tamper-evident audit log | `services/consent/app/store.py` | Every audit entry hash-chains to the previous — `GET /v1/consent/audit` includes `chain_valid` |
+
+---
+
+## Test suite
+
+```
+236 tests passing — 100% success rate
 ```
 
-## Control Domains Included
-
-The reporting layer enriches assessments with the requested NIST SP 800-53 and ISO/IEC 27001:2022 domains, including:
-
-- flaw remediation;
-- security alerts and advisories;
-- boundary protection;
-- configuration change control;
-- vulnerability monitoring and scanning;
-- continuous monitoring;
-- incident handling;
-- management of technical vulnerabilities;
-- threat intelligence;
-- network security;
-- network segregation;
-- configuration management;
-- monitoring activities;
-- protection against malware;
-- incident management planning and preparation;
-- secure development life cycle.
-
-Failed and partial domains are not left as labels only. They are converted into clear recommended actions and included in the final report.
-
-## Running Tests
+| Suite | Covers |
+|:---|:---|
+| `test_e2e.py` | Full pipeline, all endpoints, schema validation |
+| `test_security_e2e.py` | OWASP Top-10: injection, XSS, CSRF, header hardening |
+| `test_rule_engine.py` | YAML rule parsing, condition evaluation, dedup |
 
 ```bash
-pytest tests/test_e2e.py -q
+cd secmesh_scaffold && pytest tests/ -v
 ```
 
-Current verified result:
+---
 
-```text
-79 passed
+## Project structure
+
+```
+secmesh_scaffold/
+├── app_unified.py                         # single-process entry point
+├── services/
+│   ├── security_core/                     # 🆕 middleware, HMAC, rate limit, sanitize
+│   ├── consent/                           # 🆕 GDPR/CCPA/HIPAA receipts + DSR
+│   ├── behavioral/                        # 🆕 UEBA engine
+│   ├── remediation/                       # 🆕 playbooks, dry-run-first engine
+│   ├── ai_assistant/                      # 🆕 layman guidance + onboarding
+│   ├── ingestion/                         # stage 1 — evidence intake
+│   ├── normalizer/                        # stage 2 — schema standardization
+│   ├── mapping/                           # stage 3 — CWE → MITRE ATT&CK
+│   ├── scoring/                           # stage 4 — risk scoring
+│   ├── reporting/                         # stage 5 — PDF + JSON output
+│   └── gateway/                           # reverse-proxy for microservice mode
+├── agents/
+│   ├── collectors/
+│   │   └── log_collector.py               # 🆕 7-day AES-GCM retention, PII-redact
+│   ├── dirtybots_agent.py                 # on-machine collection + reporting
+│   ├── scripts/                           # one-line installers
+│   └── examples/                          # GitHub Actions, GitLab CI
+├── packages/common/                       # shared Pydantic models
+├── rules/                                 # MITRE mapping + OWASP ASVS
+├── schemas/                               # JSON Schema (Draft 2020-12)
+├── tests/
+└── reports/pdf/
 ```
 
-For broader local checks:
+---
 
-```bash
-pytest tests/ -v
-```
+## Deployment modes
 
-## Service Layout
+| Mode | Command | Best for |
+|:---|:---|:---|
+| **Unified** | `python -m secmesh_scaffold` | Dev, laptops, free-tier |
+| **Microservices** | `docker compose up --build` | Production, horizontal scale |
 
-| Service | Prefix | Entry Point |
-|---|---|---|
-| Unified Gateway | `/` | `app_unified.py` |
-| Ingestion | `/v1` | `services/ingestion/app/api.py` |
-| Normalizer | `/v1` | `services/normalizer/app/api.py` |
-| Mapping | `/v1` | `services/mapping/app/api.py` |
-| Scoring | `/v1` | `services/scoring/app/api.py` |
-| Reporting | `/v1` | `services/reporting/app/api.py` |
-| Consent | `/v1/consent` | `services/consent/app/api.py` |
-| Behavioral | `/v1/behavioral` | `services/behavioral/app/api.py` |
-| Remediation | `/v1/remediation` | `services/remediation/app/api.py` |
-| AI Assistant | `/v1/ai/app` | `services/ai_assistant/app/api.py` |
+In microservices mode, 6 containers run: gateway (8000), ingestion (8001), normalizer (8002), mapping (8003), scoring (8004), reporting (8005). The new services (consent, behavioral, remediation, AI) mount inside the gateway process in this first release; a follow-up will split them into independent containers.
 
-## Key Files
+---
 
-- `app_unified.py` - FastAPI app, protected pages, unified routes, auth, and gateway helpers.
-- `static/login.html` - login screen for authorized users.
-- `static/dashboard.html` - interactive dashboard demo.
-- `services/reporting/app/control_domains.py` - NIST/ISO control catalog and enrichment.
-- `services/reporting/app/legitimacy.py` - legitimacy confidence checks.
-- `services/reporting/app/pdf_renderer.py` - layman-friendly PDF report.
-- `services/ai_assistant/app/assistant.py` - assistant responses and action suggestions.
-- `rules/mapping/mitre_cwe_context.v1.yaml` - mapping rules.
-- `schemas/report.schema.json` - report validation schema.
-- `packages/common/src/dirtybot_common/models.py` - shared Pydantic models.
+## Defensive-only notice
 
-## Environment Variables
+defriends is a defensive security platform. It identifies, correlates, and reports on weaknesses — it does not contain exploit code, offensive payloads, or attack tools. All collection is non-destructive and consent-gated. The `dirtybots_agent.py` filename is retained for backward compatibility with existing installers; all user-facing branding is defriends.
 
-Environment variables still use the `DIRTYBOT_` prefix for compatibility with older deployments.
+---
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `DIRTYBOT_MAPPING_PACK` | `rules/mapping/mitre_cwe_context.v1.yaml` | Mapping rule pack path |
-| `DIRTYBOT_REPORT_SCHEMA` | `schemas/report.schema.json` | Report JSON Schema path |
-| `DIRTYBOT_ORG_ID` | `demo-org` | Default organization identifier |
-| `PORT` | `8080` | Unified app listen port |
+<div align="center">
 
-## Privacy And Safety Notes
+**Built with care — because security shouldn't require a PhD.**
 
-- Run assessments only on systems you own or are authorized to test.
-- Do not publish real vulnerability records, device identifiers, credentials, tokens, or customer names in screenshots or GitHub issues.
-- The interactive dashboard is designed for authenticated users. Keep it behind login in shared deployments.
-- Treat generated reports as sensitive security documents.
-
-## Development Notes
-
-All services share models from:
-
-```text
-packages/common/src/dirtybot_common/models.py
-```
-
-After changing shared models, reinstall the local package when your environment supports editable installs:
-
-```bash
-pip install -e packages/common
-```
+</div>

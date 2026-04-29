@@ -1,0 +1,283 @@
+{
+  "schema_version": "v1",
+  "report_id": "rep_demo_0001",
+  "generated_at": "2026-03-03T10:30:00Z",
+  "time_window": {
+    "from": "2026-03-01T00:00:00Z",
+    "to": "2026-03-03T10:30:00Z"
+  },
+  "asset": {
+    "org_id": "demo-org",
+    "asset_id": "payments-api",
+    "environment": "prod",
+    "name": "Payments API",
+    "version": "2.7.3"
+  },
+  "summary": {
+    "overall_risk_score": 76.4,
+    "findings_total": 3,
+    "findings_by_severity": {
+      "critical": 1,
+      "high": 1,
+      "medium": 1,
+      "low": 0
+    },
+    "controls_total": 3,
+    "controls_by_status": {
+      "pass": 1,
+      "partial": 1,
+      "fail": 1,
+      "not_applicable": 0
+    },
+    "top_techniques": [
+      "T1190",
+      "T1059.007",
+      "T1078"
+    ]
+  },
+  "mapped_findings": [
+    {
+      "finding": {
+        "cve": "CVE-2025-12345",
+        "title": "Unsafe deserialization in request parser",
+        "cwe": "CWE-502",
+        "component": "acme-request-parser",
+        "installed_version": "1.4.2",
+        "fixed_version": "1.4.6",
+        "cvss_v3": 9.8,
+        "epss": 0.72,
+        "kev": true,
+        "exposure": {
+          "internet_facing": true,
+          "authenticated_required": false,
+          "privilege_boundary": "none",
+          "reachable": true
+        },
+        "references": [
+          {
+            "kind": "sbom",
+            "ref": "cyclonedx://payments-api@2.7.3",
+            "sha256": null
+          }
+        ]
+      },
+      "techniques": [
+        {
+          "technique_id": "T1190",
+          "technique_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "confidence": 0.85,
+          "rationale": "If a server-side injection weakness is reachable on an internet-facing surface, it is commonly leveraged for Initial Access."
+        },
+        {
+          "technique_id": "T1059",
+          "technique_name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "confidence": 0.65,
+          "rationale": "If a server-side injection weakness is reachable on an internet-facing surface, it is commonly leveraged for Initial Access."
+        }
+      ]
+    },
+    {
+      "finding": {
+        "cve": "CVE-2025-22222",
+        "title": "Reflected XSS in admin search page",
+        "cwe": "CWE-79",
+        "component": "web-frontend",
+        "installed_version": "5.9.0",
+        "fixed_version": "5.9.2",
+        "cvss_v3": 6.1,
+        "epss": 0.21,
+        "kev": false,
+        "exposure": {
+          "internet_facing": false,
+          "authenticated_required": true,
+          "privilege_boundary": "user_to_admin",
+          "reachable": true
+        },
+        "references": [
+          {
+            "kind": "dast",
+            "ref": "scan://2026-03-02/admin",
+            "sha256": null
+          }
+        ]
+      },
+      "techniques": [
+        {
+          "technique_id": "T1059.007",
+          "technique_name": "JavaScript",
+          "tactic": "Execution",
+          "confidence": 0.6,
+          "rationale": "XSS can enable session abuse and user-driven execution in the browser, supporting credential access."
+        },
+        {
+          "technique_id": "T1539",
+          "technique_name": "Steal Web Session Cookie",
+          "tactic": "Credential Access",
+          "confidence": 0.55,
+          "rationale": "XSS can enable session abuse and user-driven execution in the browser, supporting credential access."
+        }
+      ]
+    },
+    {
+      "finding": {
+        "cve": "CVE-2024-99999",
+        "title": "SQL injection in legacy reporting endpoint",
+        "cwe": "CWE-89",
+        "component": "legacy-reporting",
+        "installed_version": "0.9.8",
+        "fixed_version": "1.0.1",
+        "cvss_v3": 7.5,
+        "epss": 0.38,
+        "kev": false,
+        "exposure": {
+          "internet_facing": false,
+          "authenticated_required": false,
+          "privilege_boundary": "none",
+          "reachable": true
+        },
+        "references": [
+          {
+            "kind": "sast",
+            "ref": "sast://finding/8891",
+            "sha256": null
+          }
+        ]
+      },
+      "techniques": [
+        {
+          "technique_id": "T1190",
+          "technique_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "confidence": 0.6,
+          "rationale": "SQL injection can enable credential theft, data access, or follow-on execution depending on DB and app architecture."
+        },
+        {
+          "technique_id": "T1555",
+          "technique_name": "Credentials from Password Stores",
+          "tactic": "Credential Access",
+          "confidence": 0.55,
+          "rationale": "SQL injection can enable credential theft, data access, or follow-on execution depending on DB and app architecture."
+        }
+      ]
+    }
+  ],
+  "control_results": [
+    {
+      "control_id": "ASVS.V2.1.1",
+      "title": "Verify that all pages and resources require authentication except those specifically intended to be public.",
+      "status": "partial",
+      "confidence": 0.7,
+      "evidence": [
+        {
+          "kind": "telemetry",
+          "ref": "telemetry://routes/auth_coverage",
+          "sha256": null
+        }
+      ],
+      "notes": "Public health and docs endpoints are expected; however, 8 additional routes lack explicit auth requirements.",
+      "mitigation_links": []
+    },
+    {
+      "control_id": "ASVS.V2.2.1",
+      "title": "Verify that anti-automation controls are in place to prevent credential stuffing and brute force.",
+      "status": "fail",
+      "confidence": 0.8,
+      "evidence": [
+        {
+          "kind": "config",
+          "ref": "config://auth/rate_limiting",
+          "sha256": null
+        }
+      ],
+      "notes": "No rate limiting detected on login and token endpoints.",
+      "mitigation_links": []
+    },
+    {
+      "control_id": "ASVS.V4.1.1",
+      "title": "Verify that secure headers are set as appropriate.",
+      "status": "pass",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "kind": "scan",
+          "ref": "scan://headers/2026-03-03",
+          "sha256": null
+        }
+      ],
+      "notes": "HSTS and CSP present with recommended directives for this environment.",
+      "mitigation_links": []
+    }
+  ],
+  "recommendations": [
+    {
+      "recommendation_id": "rec_0001",
+      "priority": "p0",
+      "title": "Upgrade request parser dependency and verify reachability removal",
+      "description": "Update acme-request-parser to 1.4.6+ and validate that the vulnerable code path is no longer reachable. Add regression tests for parser hardening.",
+      "owner": "app",
+      "related_controls": [
+        "ASVS.V4.1.1"
+      ],
+      "related_cves": [
+        "CVE-2025-12345"
+      ],
+      "related_techniques": [
+        "T1190",
+        "T1059"
+      ]
+    },
+    {
+      "recommendation_id": "rec_0002",
+      "priority": "p1",
+      "title": "Add rate limiting and bot defenses to authentication endpoints",
+      "description": "Implement per-IP and per-account throttling, add suspicious login detection, and ensure consistent lockout behavior.",
+      "owner": "platform",
+      "related_controls": [
+        "ASVS.V2.2.1"
+      ],
+      "related_cves": [],
+      "related_techniques": [
+        "T1110",
+        "T1078"
+      ]
+    },
+    {
+      "recommendation_id": "rec_0003",
+      "priority": "p2",
+      "title": "Harden admin UI against XSS and add CSP reporting",
+      "description": "Fix reflected XSS, add output encoding, and enable CSP report-only telemetry to detect policy violations in production.",
+      "owner": "app",
+      "related_controls": [
+        "ASVS.V2.1.1"
+      ],
+      "related_cves": [
+        "CVE-2025-22222"
+      ],
+      "related_techniques": [
+        "T1059.007",
+        "T1539"
+      ]
+    }
+  ],
+  "methodology": {
+    "inputs": [
+      "SBOM (CycloneDX)",
+      "Authenticated DAST (safe checks)",
+      "SAST alerts (triaged)",
+      "Header posture scan"
+    ],
+    "notes": "Demo report for scaffold validation and PDF layout."
+  },
+  "provenance": {
+    "mapping_pack": {
+      "pack_id": "mitre-cwe-context",
+      "version": "1.0.0"
+    },
+    "baseline_pack": {
+      "pack_id": "asvs-l2-subset",
+      "version": "1.0.0"
+    }
+  }
+}

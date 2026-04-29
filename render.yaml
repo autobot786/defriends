@@ -1,12 +1,11 @@
-﻿services:
+services:
   - type: web
     name: dirtybots
     runtime: docker
+    rootDir: secmesh_scaffold
     dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /health
-    customDomains:
-      - wwwdirtybots.com
     envVars:
       - key: DIRTYBOT_ORG_ID
         value: demo-org

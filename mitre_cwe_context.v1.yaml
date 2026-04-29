@@ -1,0 +1,117 @@
+meta:
+  pack_id: mitre-cwe-context
+  version: 1.0.0
+  mitre_version: ATT&CK v14 (Enterprise)
+  created: '2026-03-03'
+  description: 'Sample defensive mapping rules: CWE + exposure context -> relevant
+    ATT&CK techniques with rationale.'
+rules:
+- rule_id: R001
+  name: Public-facing reachable server-side injection/unsafe deserialization
+  when:
+  - any:
+    - path: cwe
+      op: in
+      value:
+      - CWE-94
+      - CWE-78
+      - CWE-502
+    - path: cwe
+      op: regex
+      value: ^CWE-(94|78|502)$
+  - path: exposure.internet_facing
+    op: truthy
+  - path: exposure.reachable
+    op: truthy
+  then:
+    confidence: 0.8
+    rationale: If a server-side injection weakness is reachable on an internet-facing
+      surface, it is commonly leveraged for Initial Access.
+    techniques:
+    - id: T1190
+      name: Exploit Public-Facing Application
+      tactic: Initial Access
+      confidence: 0.85
+    - id: T1059
+      name: Command and Scripting Interpreter
+      tactic: Execution
+      confidence: 0.65
+- rule_id: R002
+  name: SQL injection on reachable endpoint
+  when:
+  - path: cwe
+    op: eq
+    value: CWE-89
+  - path: exposure.reachable
+    op: truthy
+  then:
+    confidence: 0.7
+    rationale: SQL injection can enable credential theft, data access, or follow-on
+      execution depending on DB and app architecture.
+    techniques:
+    - id: T1190
+      name: Exploit Public-Facing Application
+      tactic: Initial Access
+      confidence: 0.6
+    - id: T1555
+      name: Credentials from Password Stores
+      tactic: Credential Access
+      confidence: 0.55
+    - id: T1078
+      name: Valid Accounts
+      tactic: Initial Access
+      confidence: 0.45
+- rule_id: R003
+  name: XSS with authenticated session context
+  when:
+  - path: cwe
+    op: eq
+    value: CWE-79
+  - path: exposure.authenticated_required
+    op: truthy
+  then:
+    confidence: 0.65
+    rationale: XSS can enable session abuse and user-driven execution in the browser,
+      supporting credential access.
+    techniques:
+    - id: T1059.007
+      name: JavaScript
+      tactic: Execution
+      confidence: 0.6
+    - id: T1539
+      name: Steal Web Session Cookie
+      tactic: Credential Access
+      confidence: 0.55
+- rule_id: R004
+  name: Authentication weakness or missing MFA on privileged boundary
+  when:
+  - any:
+    - path: cwe
+      op: in
+      value:
+      - CWE-287
+      - CWE-306
+      - CWE-307
+    - path: tags
+      op: in
+      value:
+      - missing_mfa
+      - weak_auth
+  - path: exposure.privilege_boundary
+    op: in
+    value:
+    - user_to_admin
+    - app_to_cloud_admin
+  then:
+    confidence: 0.75
+    rationale: Weak authentication on privileged boundaries increases risk of account
+      takeover and privilege escalation.
+    techniques:
+    - id: T1078
+      name: Valid Accounts
+      tactic: Initial Access
+      confidence: 0.7
+    - id: T1110
+      name: Brute Force
+      tactic: Credential Access
+      confidence: 0.45
